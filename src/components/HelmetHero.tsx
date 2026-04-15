@@ -145,7 +145,7 @@ function HeroPlane({
         uBaseScale: { value: 1.0 },
         uBaseOffset: { value: new THREE.Vector2(0.0, 0.088) },
         uOverlayScale: { value: 1.0 },
-        uOverlayOffset: { value: new THREE.Vector2(-0.02, -0.04) },
+        uOverlayOffset: { value: new THREE.Vector2(-0.02, 0.014) },
       },
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
