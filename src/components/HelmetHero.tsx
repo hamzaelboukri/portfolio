@@ -143,7 +143,7 @@ function HeroPlane({
         uBaseAspect: { value: textures.baseAspect },
         uOverlayAspect: { value: textures.overlayAspect },
         uBaseScale: { value: 1.0 },
-        uBaseOffset: { value: new THREE.Vector2(0.0, 0.016) },
+        uBaseOffset: { value: new THREE.Vector2(0.0, 0.088) },
         uOverlayScale: { value: 1.0 },
         uOverlayOffset: { value: new THREE.Vector2(-0.02, -0.04) },
       },
