@@ -17,6 +17,7 @@ export default function App() {
         </span>
         <div className="landing-header-actions">
           <a className="landing-store" href="#contact">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
             Store
           </a>
           <button type="button" className="landing-menu" aria-label="Menu">
@@ -29,11 +30,17 @@ export default function App() {
       <main className="landing-main">
         <section className="landing-hero">
           <aside className="landing-side-card landing-side-card-left">
-            <span className="landing-side-label">Portfolio</span>
-            <span className="landing-side-line" />
-            <span className="landing-side-value">Hamza</span>
-            <span className="landing-side-line" />
-            <span className="landing-side-note">creative developer</span>
+            <span className="side-card-label">Next Project</span>
+            <div className="side-card-divider" />
+            <div className="side-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="22" y1="8.5" x2="2" y2="15.5"/><line x1="2" y1="8.5" x2="22" y2="15.5"/></svg>
+            </div>
+            <span className="side-card-value">Web App</span>
+            <div className="side-card-divider" />
+            <div className="side-card-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <span className="side-card-note">Creative Dev<br/>Since 2023</span>
           </aside>
 
           <div className="landing-hero-inner">
@@ -49,11 +56,14 @@ export default function App() {
           </div>
 
           <aside className="landing-side-card landing-side-card-right">
-            <span className="landing-side-label">Hover</span>
-            <span className="landing-side-line" />
-            <span className="landing-side-value">Helmet</span>
-            <span className="landing-side-line" />
-            <span className="landing-side-note">3D reveal on cursor</span>
+            <span className="side-card-label">Interact</span>
+            <div className="side-card-divider" />
+            <div className="side-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <span className="side-card-value">Hover</span>
+            <div className="side-card-divider" />
+            <span className="side-card-note">Move cursor<br/>to reveal</span>
           </aside>
         </section>
       </main>
@@ -77,7 +87,6 @@ export default function App() {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ── Base ── */
         .landing {
           --paper: #f0ede5;
           --ink: #0a0a0a;
@@ -92,7 +101,7 @@ export default function App() {
           overflow-x: hidden;
         }
 
-        /* ── Background (Lando-style organic blobs) ── */
+        /* ── Background ── */
         .topo-bg {
           position: fixed;
           inset: 0;
@@ -268,7 +277,7 @@ export default function App() {
           position: absolute;
           inset: 0;
           perspective: 1200px;
-          cursor: none;
+          cursor: crosshair;
         }
 
         .hero-canvas-perspective {
@@ -309,24 +318,25 @@ export default function App() {
           line-height: 0.9;
           text-transform: uppercase;
           color: var(--ink);
-          opacity: 0.12;
+          opacity: 0.10;
           margin: 0;
         }
 
-        /* ── Side Cards ── */
+        /* ── Side Cards (Lando Norris style) ── */
         .landing-side-card {
           position: absolute;
           z-index: 4;
           border: 1px solid var(--line);
-          border-radius: 12px;
-          padding: 0.85rem 0.75rem;
-          background: rgba(255, 255, 255, 0.5);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          border-radius: 14px;
+          padding: 0.75rem 0.7rem;
+          background: rgba(255, 255, 255, 0.55);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           display: flex;
           flex-direction: column;
-          gap: 0.55rem;
-          width: 92px;
+          align-items: center;
+          gap: 0.45rem;
+          width: 96px;
           text-align: center;
         }
 
@@ -340,33 +350,53 @@ export default function App() {
           top: 7rem;
         }
 
-        .landing-side-label {
+        .side-card-label {
           display: block;
-          font-size: 0.5rem;
+          font-size: 0.48rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
           color: var(--ink-soft);
+          font-weight: 500;
         }
 
-        .landing-side-value {
+        .side-card-divider {
+          width: 100%;
+          height: 1px;
+          background: rgba(10, 10, 10, 0.08);
+        }
+
+        .side-card-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--ink);
+          opacity: 0.7;
+          padding: 0.15rem 0;
+        }
+
+        .side-card-value {
           font-family: "Bebas Neue", sans-serif;
-          font-size: 1.1rem;
+          font-size: 1rem;
           letter-spacing: 0.04em;
           line-height: 1;
+          text-transform: uppercase;
         }
 
-        .landing-side-note {
-          font-size: 0.56rem;
+        .side-card-badge {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--ink);
+          opacity: 0.5;
+        }
+
+        .side-card-note {
+          font-size: 0.5rem;
           line-height: 1.35;
           color: var(--ink-soft);
           text-transform: uppercase;
           letter-spacing: 0.1em;
-        }
-
-        .landing-side-line {
-          width: 100%;
-          height: 1px;
-          background: rgba(10, 10, 10, 0.08);
+          font-weight: 500;
         }
 
         /* ── Footer ── */
@@ -412,6 +442,11 @@ export default function App() {
             width: 72px;
             padding: 0.55rem 0.45rem;
             font-size: 0.85em;
+          }
+
+          .side-card-icon svg {
+            width: 22px;
+            height: 22px;
           }
 
           .hero-name-overlay { bottom: 1.5rem; }
