@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/distortimagecanvas.tsx","./src/components/riveaccent.tsx"],"version":"5.6.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/distortimagecanvas.tsx","./src/components/helmethero.tsx","./src/components/riveaccent.tsx","./src/components/topobackground.tsx"],"version":"5.6.3"}

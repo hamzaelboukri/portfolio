@@ -1,237 +1,263 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-const STRIPS = 7;
+const VERTEX = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
+  }
+`;
 
-function createProceduralHelmetTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  const s = 1024;
-  canvas.width = s;
-  canvas.height = s;
-  const ctx = canvas.getContext("2d")!;
-  ctx.clearRect(0, 0, s, s);
+const FRAGMENT = `
+  precision highp float;
+  varying vec2 vUv;
 
-  const cx = s * 0.5;
-  const cy = s * 0.38;
+  uniform sampler2D uBase;
+  uniform sampler2D uOverlay;
+  uniform vec2 uPointer;
+  uniform float uReveal;
+  uniform float uScreenAspect;
+  uniform float uBaseAspect;
+  uniform float uOverlayAspect;
+  uniform float uBaseScale;
+  uniform vec2 uBaseOffset;
+  uniform float uOverlayScale;
+  uniform vec2 uOverlayOffset;
 
-  ctx.fillStyle = "#ffd505";
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, s * 0.27, s * 0.31, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#0a0a0a";
-  for (let i = 0; i < 55; i++) {
-    ctx.beginPath();
-    ctx.arc(
-      cx + (Math.random() - 0.5) * s * 0.45,
-      cy + (Math.random() - 0.5) * s * 0.48,
-      Math.random() * 10 + 2,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
+  vec2 fitHeight(vec2 uv, float screenAspect, float imgAspect) {
+    vec2 s = uv;
+    float ratio = imgAspect / screenAspect;
+    s.x = (uv.x - 0.5) / ratio + 0.5;
+    return s;
   }
 
-  ctx.fillStyle = "#0d0d0d";
-  ctx.beginPath();
-  ctx.ellipse(cx, cy + s * 0.04, s * 0.2, s * 0.045, 0, 0, Math.PI * 2);
-  ctx.fill();
+  vec2 fitHeightScaled(vec2 uv, float screenAspect, float imgAspect, float scale, vec2 offset) {
+    vec2 s = uv;
+    float ratio = imgAspect / screenAspect;
+    s.x = (uv.x - 0.5) / (ratio * scale) + 0.5 + offset.x;
+    s.y = (uv.y - 0.5) / scale + 0.5 + offset.y;
+    return s;
+  }
 
-  ctx.fillStyle = "#ffd505";
-  ctx.beginPath();
-  ctx.ellipse(cx, cy + s * 0.14, s * 0.18, s * 0.1, 0, 0, Math.PI * 2);
-  ctx.fill();
+  void main() {
+    vec2 baseUv = fitHeightScaled(vUv, uScreenAspect, uBaseAspect, uBaseScale, uBaseOffset);
+    vec2 overlayUv = fitHeightScaled(vUv, uScreenAspect, uOverlayAspect, uOverlayScale, uOverlayOffset);
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
+    bool outBase = baseUv.x < 0.0 || baseUv.x > 1.0 || baseUv.y < 0.0 || baseUv.y > 1.0;
+    bool outOverlay = overlayUv.x < 0.0 || overlayUv.x > 1.0 || overlayUv.y < 0.0 || overlayUv.y > 1.0;
 
-function cloneStripTexture(
-  base: THREE.Texture,
-  stripIndex: number,
-  total: number
-): THREE.Texture {
-  const t = base.clone();
-  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-  t.repeat.set(1, 1 / total);
-  t.offset.set(0, stripIndex / total);
-  t.needsUpdate = true;
-  return t;
-}
+    vec4 base = outBase ? vec4(0.0) : texture2D(uBase, baseUv);
+    vec4 overlay = outOverlay ? vec4(0.0) : texture2D(uOverlay, overlayUv);
 
-function HelmetStrip({
-  texture,
-  width,
-  height,
-  stripIndex,
-  total,
-  intro,
+    float fade = uReveal;
+
+    float overlayVis = overlay.a * fade;
+    float baseVis = base.a * (1.0 - overlayVis);
+    float outAlpha = overlayVis + baseVis;
+
+    vec3 outColor = outAlpha > 0.001
+      ? (overlay.rgb * overlayVis + base.rgb * baseVis) / outAlpha
+      : vec3(0.0);
+
+    gl_FragColor = vec4(outColor, outAlpha);
+  }
+`;
+
+function HeroPlane({
+  baseUrl,
+  overlayUrl,
+  hovered,
+  pointer,
 }: {
-  texture: THREE.Texture;
-  width: number;
-  height: number;
-  stripIndex: number;
-  total: number;
-  intro: React.MutableRefObject<number>;
+  baseUrl: string;
+  overlayUrl: string;
+  hovered: boolean;
+  pointer: React.MutableRefObject<{ x: number; y: number }>;
 }) {
-  const mesh = useRef<THREE.Mesh>(null);
-  const map = useMemo(
-    () => cloneStripTexture(texture, stripIndex, total),
-    [texture, stripIndex, total]
-  );
+  const { size } = useThree();
+  const matRef = useRef<THREE.ShaderMaterial | null>(null);
+  const [textures, setTextures] = useState<{
+    base: THREE.Texture;
+    overlay: THREE.Texture;
+    baseAspect: number;
+    overlayAspect: number;
+  } | null>(null);
 
   useEffect(() => {
-    return () => {
-      map.dispose();
-    };
-  }, [map]);
+    const loader = new THREE.TextureLoader();
+    let disposed = false;
+    let base: THREE.Texture | null = null;
+    let overlay: THREE.Texture | null = null;
 
-  useFrame((state) => {
-    const m = mesh.current;
-    if (!m) return;
-    const t = state.clock.elapsedTime;
-    const p = intro.current;
-    const phase = stripIndex * 0.65;
-    m.position.z =
-      THREE.MathUtils.lerp(0.28, 0.018 * stripIndex, p) +
-      Math.sin(t * 1.15 + phase) * 0.014 * p;
-    m.position.x = Math.sin(t * 0.85 + phase) * 0.012 * p;
+    const tryFinish = () => {
+      if (!base || !overlay || disposed) return;
+      const bImg = base.image as HTMLImageElement;
+      const oImg = overlay.image as HTMLImageElement;
+      setTextures({
+        base,
+        overlay,
+        baseAspect: bImg.naturalWidth / bImg.naturalHeight,
+        overlayAspect: oImg.naturalWidth / oImg.naturalHeight,
+      });
+    };
+
+    loader.load(baseUrl, (tex) => {
+      if (disposed) { tex.dispose(); return; }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      base = tex;
+      tryFinish();
+    });
+
+    loader.load(overlayUrl, (tex) => {
+      if (disposed) { tex.dispose(); return; }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      overlay = tex;
+      tryFinish();
+    });
+
+    return () => {
+      disposed = true;
+      base?.dispose();
+      overlay?.dispose();
+    };
+  }, [baseUrl, overlayUrl]);
+
+  useEffect(() => {
+    if (!textures) return;
+
+    const mat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        uBase: { value: textures.base },
+        uOverlay: { value: textures.overlay },
+        uPointer: { value: new THREE.Vector2(0.5, 0.5) },
+        uReveal: { value: 0 },
+        uScreenAspect: { value: size.width / size.height },
+        uBaseAspect: { value: textures.baseAspect },
+        uOverlayAspect: { value: textures.overlayAspect },
+        uBaseScale: { value: 1.0 },
+        uBaseOffset: { value: new THREE.Vector2(0.0, 0.016) },
+        uOverlayScale: { value: 1.0 },
+        uOverlayOffset: { value: new THREE.Vector2(-0.02, -0.04) },
+      },
+      vertexShader: VERTEX,
+      fragmentShader: FRAGMENT,
+    });
+
+    matRef.current = mat;
+    return () => { mat.dispose(); matRef.current = null; };
+  }, [textures, size.width, size.height]);
+
+  useFrame((_state, delta) => {
+    const mat = matRef.current;
+    if (!mat) return;
+
+    const u = mat.uniforms;
+    const p = u.uPointer.value as THREE.Vector2;
+
+    p.x = THREE.MathUtils.damp(p.x, pointer.current.x, 4, delta);
+    p.y = THREE.MathUtils.damp(p.y, 1 - pointer.current.y, 4, delta);
+
+    u.uReveal.value = THREE.MathUtils.damp(
+      u.uReveal.value,
+      hovered ? 1 : 0,
+      hovered ? 3 : 2,
+      delta
+    );
+
+    u.uScreenAspect.value = size.width / size.height;
   });
 
+  if (!matRef.current) return null;
+
   return (
-    <mesh ref={mesh} position={[0, 0, stripIndex * 0.003]}>
-      <planeGeometry args={[width, height, 1, 1]} />
-      <meshStandardMaterial
-        map={map}
-        transparent
-        alphaTest={0.08}
-        side={THREE.DoubleSide}
-        roughness={0.42}
-        metalness={0.12}
-      />
+    <mesh>
+      <planeGeometry args={[2, 2]} />
+      <primitive object={matRef.current} attach="material" />
     </mesh>
   );
 }
 
-function HelmetSceneContent({
-  aspect,
-  helmetTexture,
-}: {
-  aspect: number;
-  helmetTexture: THREE.Texture;
-}) {
-  const group = useRef<THREE.Group>(null);
-  const intro = useRef(0);
-  const { viewport } = useThree();
-
-  const { w, h } = useMemo(() => {
-    const maxW = viewport.width * 0.92;
-    const maxH = viewport.height * 0.92;
-    let width = maxW;
-    let height = width / aspect;
-    if (height > maxH) {
-      height = maxH;
-      width = height * aspect;
-    }
-    return { w: width, h: height };
-  }, [viewport.width, viewport.height, aspect]);
-
-  useFrame((state, delta) => {
-    intro.current = THREE.MathUtils.damp(intro.current, 1, 2.4, delta);
-    const g = group.current;
-    if (!g) return;
-    const px = state.pointer.x;
-    const py = state.pointer.y;
-    g.rotation.y = THREE.MathUtils.lerp(g.rotation.y, px * 0.2, 0.07);
-    g.rotation.x = THREE.MathUtils.lerp(g.rotation.x, -py * 0.14, 0.07);
-  });
-
-  return (
-    <group ref={group}>
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[4, 6, 8]} intensity={1.15} />
-      <directionalLight position={[-3, -2, 4]} intensity={0.38} color="#fff8e0" />
-      {Array.from({ length: STRIPS }, (_, i) => (
-        <HelmetStrip
-          key={`${helmetTexture.uuid}-${i}`}
-          texture={helmetTexture}
-          width={w}
-          height={h}
-          stripIndex={i}
-          total={STRIPS}
-          intro={intro}
-        />
-      ))}
-    </group>
-  );
-}
-
-function HelmetScene({ aspect }: { aspect: number }) {
-  const [helmetTexture, setHelmetTexture] = useState<THREE.Texture>(
-    () => createProceduralHelmetTexture()
-  );
-
-  useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    let cancelled = false;
-    loader.load(
-      "/images/helmet-overlay.png",
-      (tex) => {
-        if (cancelled) return;
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.needsUpdate = true;
-        setHelmetTexture(tex);
-      },
-      undefined,
-      () => {}
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return <HelmetSceneContent aspect={aspect} helmetTexture={helmetTexture} />;
-}
-
-function CanvasFallback() {
-  return null;
-}
-
 export type HelmetHeroProps = {
-  portraitUrl: string;
+  baseUrl: string;
+  revealUrl: string;
   portraitAlt?: string;
 };
 
-export function HelmetHero({ portraitUrl, portraitAlt = "" }: HelmetHeroProps) {
-  const [aspect, setAspect] = useState(0.75);
+export function HelmetHero({ baseUrl, revealUrl }: HelmetHeroProps) {
+  const [hovered, setHovered] = useState(false);
+  const pointer = useRef({ x: 0.5, y: 0.5 });
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const raf = useRef(0);
+  const cur = useRef({ x: 0.5, y: 0.5 });
+  const tgt = useRef({ x: 0.5, y: 0.5 });
+
+  const tick = useCallback(() => {
+    const s = 0.04;
+    const c = cur.current;
+    const t = tgt.current;
+    c.x += (t.x - c.x) * s;
+    c.y += (t.y - c.y) * s;
+    pointer.current = { x: c.x, y: c.y };
+
+    const el = wrapRef.current;
+    if (el) {
+      el.style.setProperty("--rx", `${(c.y - 0.5) * -4}deg`);
+      el.style.setProperty("--ry", `${(c.x - 0.5) * 5}deg`);
+    }
+
+    if (Math.abs(t.x - c.x) > 0.0002 || Math.abs(t.y - c.y) > 0.0002) {
+      raf.current = requestAnimationFrame(tick);
+    } else {
+      raf.current = 0;
+    }
+  }, []);
+
+  const go = useCallback(() => {
+    if (!raf.current) raf.current = requestAnimationFrame(tick);
+  }, [tick]);
+
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    tgt.current = {
+      x: (e.clientX - r.left) / r.width,
+      y: (e.clientY - r.top) / r.height,
+    };
+    go();
+  };
 
   return (
-    <div className="helmet-hero-stage">
-      <img
-        src={portraitUrl}
-        alt={portraitAlt}
-        className="helmet-hero-portrait"
-        draggable={false}
-        onLoad={(e) => {
-          const el = e.currentTarget;
-          setAspect(el.naturalWidth / el.naturalHeight);
-        }}
-      />
-      <div className="helmet-hero-canvas" aria-hidden>
+    <div
+      ref={wrapRef}
+      className="hero-canvas-wrap"
+      style={{ "--rx": "0deg", "--ry": "0deg" } as React.CSSProperties}
+      onPointerEnter={() => { setHovered(true); go(); }}
+      onPointerLeave={() => { setHovered(false); tgt.current = { x: 0.5, y: 0.5 }; go(); }}
+      onPointerMove={onMove}
+    >
+      <div className="hero-canvas-perspective">
         <Canvas
-          camera={{ position: [0, 0, 4.2], fov: 42 }}
-          gl={{
-            alpha: true,
-            antialias: true,
-            premultipliedAlpha: false,
-          }}
+          gl={{ alpha: true, antialias: true, premultipliedAlpha: false }}
           dpr={[1, 2]}
+          onCreated={({ gl }) => {
+            gl.setClearColor(0x000000, 0);
+          }}
         >
-          <Suspense fallback={<CanvasFallback />}>
-            <HelmetScene aspect={aspect} />
+          <Suspense fallback={null}>
+            <HeroPlane
+              baseUrl={baseUrl}
+              overlayUrl={revealUrl}
+              hovered={hovered}
+              pointer={pointer}
+            />
           </Suspense>
         </Canvas>
       </div>
