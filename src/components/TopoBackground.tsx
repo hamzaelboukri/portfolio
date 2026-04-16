@@ -1,138 +1,6 @@
-import { useEffect, useRef } from "react";
+import { WaveFieldCanvas } from "./WaveFieldCanvas";
 
 export function TopoBackground() {
-  const waveCanvasRef = useRef<HTMLCanvasElement>(null);
-  const pointerRef = useRef({
-    x: 0.5,
-    y: 0.5,
-    tx: 0.5,
-    ty: 0.5,
-    active: false,
-  });
-
-  useEffect(() => {
-    const canvas = waveCanvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const reduceMotion = media.matches;
-    const motionFactor = reduceMotion ? 0.45 : 1;
-
-    type StreamConfig = {
-      y: number;
-      speed: number;
-      freq: number;
-      amp: number;
-      phase: number;
-      alpha: number;
-      width: number;
-      span: number;
-      drift: number;
-    };
-
-    const rand = (min: number, max: number) => min + Math.random() * (max - min);
-    const streams: StreamConfig[] = Array.from({ length: 10 }, () => ({
-      y: rand(0.1, 0.9),
-      speed: rand(0.38, 0.86),
-      freq: rand(1.1, 2.4),
-      amp: rand(8, 26),
-      phase: rand(0, Math.PI * 2),
-      alpha: rand(0.1, 0.28),
-      width: rand(1.0, 2.1),
-      span: rand(420, 780),
-      drift: rand(5, 14),
-    }));
-
-    let raf = 0;
-    let t = 0;
-    let width = 0;
-    let height = 0;
-
-    const resize = () => {
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.6);
-      width = canvas.clientWidth;
-      height = canvas.clientHeight;
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!width || !height) return;
-      pointerRef.current.tx = Math.min(Math.max(e.clientX / width, 0), 1);
-      pointerRef.current.ty = Math.min(Math.max(e.clientY / height, 0), 1);
-      pointerRef.current.active = true;
-    };
-
-    const onPointerLeave = () => {
-      pointerRef.current.active = false;
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-      const pointer = pointerRef.current;
-      pointer.x += (pointer.tx - pointer.x) * 0.14;
-      pointer.y += (pointer.ty - pointer.y) * 0.14;
-      const px = pointer.x * width;
-      const py = pointer.y * height;
-      const influenceRadius = Math.min(width, height) * 0.24;
-
-      for (const stream of streams) {
-        const cycle = (t * stream.speed * 0.0015 + stream.phase) % 1;
-        const headX = -width * 0.35 + cycle * width * 1.7;
-        const segs = 34;
-
-        ctx.beginPath();
-        for (let i = 0; i <= segs; i += 1) {
-          const p = i / segs - 0.5;
-          const x = headX + p * stream.span;
-          let y =
-            height * stream.y +
-            Math.sin((x / Math.max(width, 1)) * Math.PI * 2 * stream.freq + t * 0.012 + stream.phase) *
-              stream.amp +
-            Math.cos(t * 0.004 + stream.phase) * stream.drift;
-
-          if (pointer.active) {
-            const dx = x - px;
-            const dy = y - py;
-            const dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
-            const f = Math.max(0, 1 - dist / influenceRadius);
-            y += (dy / dist) * f * f * 24;
-          }
-
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        const alphaBoost = pointer.active ? 0.08 : 0;
-        ctx.strokeStyle = `rgba(10, 10, 10, ${(stream.alpha + alphaBoost).toFixed(3)})`;
-        ctx.lineWidth = stream.width;
-        ctx.lineCap = "round";
-        ctx.stroke();
-      }
-
-      t += 0.5 * motionFactor;
-      raf = requestAnimationFrame(draw);
-    };
-
-    resize();
-    draw();
-    window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("pointerleave", onPointerLeave);
-    window.addEventListener("blur", onPointerLeave);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerleave", onPointerLeave);
-      window.removeEventListener("blur", onPointerLeave);
-    };
-  }, []);
-
   return (
     <div className="topo-bg" aria-hidden>
       <svg
@@ -177,6 +45,33 @@ export function TopoBackground() {
       </svg>
 
       <svg
+        className="topo-contours-h"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <g fill="none">
+          <path
+            className="topo-h topo-h-1"
+            d="M0,52 C200,46 380,58 580,50 S1000,44 1440,54"
+          />
+          <path className="topo-h topo-h-2" d="M0,118 C240,112 460,128 700,114 S1100,108 1440,122" />
+          <path className="topo-h topo-h-3" d="M0,178 C300,168 520,190 760,176 S1120,168 1440,184" />
+          <path className="topo-h topo-h-4" d="M0,238 C220,232 480,250 720,236 S1060,226 1440,244" />
+          <path className="topo-h topo-h-5" d="M0,298 C280,288 500,310 740,296 S1040,286 1440,302" />
+          <path className="topo-h topo-h-6" d="M0,358 C200,352 440,372 680,358 S1020,348 1440,364" />
+          <path className="topo-h topo-h-7" d="M0,418 C260,408 520,430 780,414 S1080,408 1440,424" />
+          <path className="topo-h topo-h-8" d="M0,478 C240,470 460,492 700,480 S980,468 1440,486" />
+          <path className="topo-h topo-h-9" d="M0,538 C300,528 540,552 800,536 S1100,522 1440,542" />
+          <path className="topo-h topo-h-10" d="M0,598 C220,590 460,610 720,598 S1000,586 1440,602" />
+          <path className="topo-h topo-h-11" d="M0,658 C280,648 520,672 760,656 S1040,644 1440,664" />
+          <path className="topo-h topo-h-12" d="M0,718 C200,710 480,732 740,718 S1020,704 1440,724" />
+          <path className="topo-h topo-h-13" d="M0,778 C320,766 560,790 820,772 S1120,762 1440,782" />
+          <path className="topo-h topo-h-14" d="M0,838 C240,828 500,852 760,836 S980,822 1440,846" />
+        </g>
+      </svg>
+
+      <svg
         className="topo-lines"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 1440 900"
@@ -193,7 +88,7 @@ export function TopoBackground() {
         <path className="topo-line topo-line-9" d="M914 716 C970 686, 1044 694, 1088 738 C1132 782, 1130 854, 1078 892 C1024 932, 948 926, 906 880 C864 834, 864 754, 914 716 Z" />
         <path className="topo-line topo-line-10" d="M1268 684 C1310 662, 1362 668, 1388 702 C1414 736, 1412 790, 1378 820 C1342 852, 1288 848, 1258 814 C1228 778, 1230 708, 1268 684 Z" />
       </svg>
-      <canvas ref={waveCanvasRef} className="topo-wave-canvas" />
+      <WaveFieldCanvas className="topo-wave-canvas" />
     </div>
   );
 }

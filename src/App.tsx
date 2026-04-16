@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { FooterScrollReveal } from "./components/FooterScrollReveal";
 import { HelmetHero } from "./components/HelmetHero";
+import { HeroRive } from "./components/HeroRive";
 import { TopoBackground } from "./components/TopoBackground";
+import { RIVE_ASSETS } from "./riveAssets";
 
 const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
@@ -94,6 +97,8 @@ export default function App() {
               onReady={() => setHeroReady(true)}
             />
 
+            <HeroRive src={RIVE_ASSETS.helmets} />
+
             <div className="hero-name-overlay" aria-hidden="true">
               <h1 className="hero-name">Hamza Elboukri</h1>
             </div>
@@ -112,10 +117,10 @@ export default function App() {
         </section>
       </main>
 
-      <footer id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
+      <FooterScrollReveal id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
         <p>&copy; {new Date().getFullYear()} Hamza Elboukri</p>
         <a href="mailto:hello@example.com">hello@example.com</a>
-      </footer>
+      </FooterScrollReveal>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
@@ -210,6 +215,7 @@ export default function App() {
         }
 
         .topo-blobs,
+        .topo-contours-h,
         .topo-lines,
         .topo-wave-canvas {
           position: absolute;
@@ -219,10 +225,39 @@ export default function App() {
         }
 
         .topo-blobs {
-          color: rgba(10, 10, 10, 0.045);
+          color: rgba(10, 10, 10, 0.052);
           z-index: 0;
           animation: none;
         }
+
+        .topo-contours-h {
+          z-index: 1;
+          opacity: 0.88;
+          pointer-events: none;
+        }
+
+        .topo-h {
+          stroke: rgba(12, 12, 14, 0.19);
+          stroke-width: 0.55;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          vector-effect: non-scaling-stroke;
+        }
+
+        .topo-h-2,
+        .topo-h-4,
+        .topo-h-6,
+        .topo-h-8 { opacity: 0.78; stroke-width: 0.48; }
+        .topo-h-1,
+        .topo-h-5,
+        .topo-h-9,
+        .topo-h-13 { opacity: 0.92; }
+        .topo-h-3,
+        .topo-h-7,
+        .topo-h-11 { opacity: 0.65; stroke: rgba(10, 10, 12, 0.14); }
+        .topo-h-10,
+        .topo-h-12,
+        .topo-h-14 { opacity: 0.72; }
 
         .topo-shape { transform-origin: center; }
         .topo-shape-a { animation: none; }
@@ -232,21 +267,21 @@ export default function App() {
         .topo-shape-e { animation: none; opacity: 0.5; }
 
         .topo-lines {
-          opacity: 0.16;
-          filter: blur(0.25px);
+          opacity: 0.28;
+          filter: blur(0.22px);
           z-index: 1;
           animation: none;
         }
         .topo-wave-canvas {
           z-index: 2;
-          opacity: 0.62;
-          filter: blur(0.45px);
+          opacity: 0.5;
+          filter: blur(0.4px);
           mix-blend-mode: multiply;
           animation: none;
         }
         .topo-line {
           fill: none;
-          stroke: rgba(10, 10, 10, 0.08);
+          stroke: rgba(12, 12, 14, 0.14);
           stroke-width: 0.5;
           transform-origin: 50% 50%;
         }
@@ -254,12 +289,12 @@ export default function App() {
         .topo-line-2  { animation: none; }
         .topo-line-3  { animation: none; stroke-width: 0.35; }
         .topo-line-4  { animation: none; stroke-width: 0.4; }
-        .topo-line-5  { animation: none; stroke-width: 0.3; opacity: 0.55; }
-        .topo-line-6  { animation: none; stroke-width: 0.3; opacity: 0.6; }
-        .topo-line-7  { animation: none; stroke-width: 0.35; opacity: 0.5; }
-        .topo-line-8  { animation: none; stroke-width: 0.25; opacity: 0.5; }
-        .topo-line-9  { animation: none; stroke-width: 0.3; opacity: 0.42; }
-        .topo-line-10 { animation: none; stroke-width: 0.25; opacity: 0.38; }
+        .topo-line-5  { animation: none; stroke-width: 0.32; opacity: 0.72; }
+        .topo-line-6  { animation: none; stroke-width: 0.32; opacity: 0.76; }
+        .topo-line-7  { animation: none; stroke-width: 0.36; opacity: 0.62; }
+        .topo-line-8  { animation: none; stroke-width: 0.28; opacity: 0.65; }
+        .topo-line-9  { animation: none; stroke-width: 0.32; opacity: 0.58; }
+        .topo-line-10 { animation: none; stroke-width: 0.28; opacity: 0.55; }
 
         @keyframes blob-drift-a {
           0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
@@ -331,10 +366,12 @@ export default function App() {
           to { transform: rotate(360deg); }
         }
         @media (prefers-reduced-motion: reduce) {
+          .topo-h,
           .topo-line,
           .topo-shape,
           .topo-bg::after,
           .topo-bg,
+          .topo-contours-h,
           .topo-lines,
           .topo-wave-canvas,
           .topo-blobs {
@@ -439,20 +476,38 @@ export default function App() {
           position: relative;
           width: 100%;
           height: 100%;
+          pointer-events: none;
         }
 
-        /* ── Canvas ── */
+        /* ── WebGL hero (z:1) + Rive canvas overlay (z:2), name (z:3) ── */
         .hero-canvas-wrap {
           position: absolute;
           inset: 0;
+          z-index: 1;
           perspective: 1200px;
-          cursor: default;
+          pointer-events: none;
+        }
+
+        .hero-rive-layer {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          pointer-events: none;
+          opacity: 0.38;
+          mix-blend-mode: soft-light;
+        }
+
+        .hero-rive-layer canvas {
+          display: block;
+          width: 100% !important;
+          height: 100% !important;
         }
 
         .hero-canvas-perspective {
           width: 100%;
           height: 100%;
           transform-style: preserve-3d;
+          pointer-events: none;
           transform:
             rotateX(var(--rx, 0deg))
             rotateY(var(--ry, 0deg));
@@ -467,6 +522,9 @@ export default function App() {
           display: block;
           width: 100% !important;
           height: 100% !important;
+          pointer-events: auto;
+          cursor: crosshair;
+          touch-action: none;
         }
 
         /* ── Name Overlay ── */
