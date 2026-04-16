@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { HelmetHero } from "./components/HelmetHero";
 import { TopoBackground } from "./components/TopoBackground";
 
@@ -5,11 +6,53 @@ const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
 
 export default function App() {
+  const [bootReady, setBootReady] = useState(false);
+  const [heroReady, setHeroReady] = useState(false);
+  const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
+
+  useEffect(() => {
+    let mounted = true;
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 700));
+
+    const preloadImage = (src: string) =>
+      new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+        img.src = src;
+      });
+
+    const fontsReady =
+      "fonts" in document
+        ? (document as Document & { fonts: { ready: Promise<unknown> } }).fonts.ready
+        : Promise.resolve();
+
+    Promise.allSettled([
+      preloadImage(HERO_BASE),
+      preloadImage(HERO_HOVER),
+      fontsReady,
+      minDelay,
+    ]).then(() => {
+      if (mounted) setBootReady(true);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <div className="landing">
+      {isLoading && (
+        <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading website">
+          <div className="boot-loader-ring" />
+          <span className="boot-loader-text">Loading experience...</span>
+        </div>
+      )}
+
       <TopoBackground />
 
-      <header className="landing-header">
+      <header className={`landing-header${isLoading ? " is-booting" : ""}`}>
         <span className="landing-logo">
           Hamza
           <br />
@@ -27,7 +70,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="landing-main">
+      <main className={`landing-main${isLoading ? " is-booting" : ""}`}>
         <section className="landing-hero">
           <aside className="landing-side-card landing-side-card-left">
             <span className="side-card-label">Next Project</span>
@@ -48,6 +91,7 @@ export default function App() {
               baseUrl={HERO_BASE}
               revealUrl={HERO_HOVER}
               portraitAlt="Hamza Elboukri"
+              onReady={() => setHeroReady(true)}
             />
 
             <div className="hero-name-overlay" aria-hidden="true">
@@ -68,7 +112,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer id="contact" className="landing-footer">
+      <footer id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
         <p>&copy; {new Date().getFullYear()} Hamza Elboukri</p>
         <a href="mailto:hello@example.com">hello@example.com</a>
       </footer>
@@ -101,6 +145,47 @@ export default function App() {
           overflow-x: hidden;
         }
 
+        .boot-loader {
+          position: fixed;
+          inset: 0;
+          z-index: 20;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.9rem;
+          background: var(--paper);
+          color: var(--ink);
+        }
+
+        .boot-loader-ring {
+          width: 42px;
+          height: 42px;
+          border: 3px solid rgba(10, 10, 10, 0.14);
+          border-top-color: rgba(10, 10, 10, 0.8);
+          border-radius: 999px;
+          animation: loader-spin 0.85s linear infinite;
+        }
+
+        .boot-loader-text {
+          font-size: 0.72rem;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(10, 10, 10, 0.65);
+          font-weight: 600;
+        }
+
+        .landing-header,
+        .landing-main,
+        .landing-footer {
+          transition: opacity 0.45s ease;
+        }
+
+        .is-booting {
+          opacity: 0;
+          pointer-events: none;
+        }
+
         /* ── Background ── */
         .topo-bg {
           position: fixed;
@@ -108,41 +193,73 @@ export default function App() {
           pointer-events: none;
           z-index: 0;
           overflow: hidden;
+          isolation: isolate;
+          animation: none;
+        }
+
+        .topo-bg::after {
+          content: "";
+          position: absolute;
+          inset: -20%;
+          background:
+            radial-gradient(45% 35% at 18% 22%, rgba(255, 255, 255, 0.45), transparent 70%),
+            radial-gradient(38% 32% at 82% 68%, rgba(0, 0, 0, 0.05), transparent 74%);
+          opacity: 0.6;
+          animation: none;
+          z-index: 0;
         }
 
         .topo-blobs,
-        .topo-lines {
+        .topo-lines,
+        .topo-wave-canvas {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
         }
 
-        .topo-blobs { color: rgba(10, 10, 10, 0.055); }
+        .topo-blobs {
+          color: rgba(10, 10, 10, 0.045);
+          z-index: 0;
+          animation: none;
+        }
 
         .topo-shape { transform-origin: center; }
-        .topo-shape-a { animation: blob-drift-a 22s ease-in-out infinite alternate; }
-        .topo-shape-b { animation: blob-drift-b 26s ease-in-out infinite alternate; opacity: 0.85; }
-        .topo-shape-c { animation: blob-drift-c 20s ease-in-out infinite alternate; opacity: 0.7; }
-        .topo-shape-d { animation: blob-drift-d 24s ease-in-out infinite alternate; opacity: 0.6; }
-        .topo-shape-e { animation: blob-drift-e 18s ease-in-out infinite alternate; opacity: 0.5; }
+        .topo-shape-a { animation: none; }
+        .topo-shape-b { animation: none; opacity: 0.85; }
+        .topo-shape-c { animation: none; opacity: 0.7; }
+        .topo-shape-d { animation: none; opacity: 0.6; }
+        .topo-shape-e { animation: none; opacity: 0.5; }
 
-        .topo-lines { opacity: 0.3; }
+        .topo-lines {
+          opacity: 0.16;
+          filter: blur(0.25px);
+          z-index: 1;
+          animation: none;
+        }
+        .topo-wave-canvas {
+          z-index: 2;
+          opacity: 0.62;
+          filter: blur(0.45px);
+          mix-blend-mode: multiply;
+          animation: none;
+        }
         .topo-line {
           fill: none;
-          stroke: rgba(10, 10, 10, 0.07);
+          stroke: rgba(10, 10, 10, 0.08);
           stroke-width: 0.5;
+          transform-origin: 50% 50%;
         }
-        .topo-line-1  { animation: line-shift 28s ease-in-out infinite alternate; }
-        .topo-line-2  { animation: line-shift 32s ease-in-out infinite alternate-reverse; }
-        .topo-line-3  { animation: line-shift 26s ease-in-out infinite alternate; stroke-width: 0.35; }
-        .topo-line-4  { animation: line-shift 30s ease-in-out infinite alternate-reverse; stroke-width: 0.4; }
-        .topo-line-5  { animation: line-shift 24s ease-in-out infinite alternate; stroke-width: 0.3; opacity: 0.6; }
-        .topo-line-6  { animation: line-shift 34s ease-in-out infinite alternate-reverse; stroke-width: 0.3; opacity: 0.7; }
-        .topo-line-7  { animation: line-shift 22s ease-in-out infinite alternate; stroke-width: 0.35; opacity: 0.5; }
-        .topo-line-8  { animation: line-shift 29s ease-in-out infinite alternate-reverse; stroke-width: 0.25; opacity: 0.55; }
-        .topo-line-9  { animation: line-shift 25s ease-in-out infinite alternate; stroke-width: 0.3; opacity: 0.45; }
-        .topo-line-10 { animation: line-shift 31s ease-in-out infinite alternate-reverse; stroke-width: 0.25; opacity: 0.4; }
+        .topo-line-1  { animation: none; }
+        .topo-line-2  { animation: none; }
+        .topo-line-3  { animation: none; stroke-width: 0.35; }
+        .topo-line-4  { animation: none; stroke-width: 0.4; }
+        .topo-line-5  { animation: none; stroke-width: 0.3; opacity: 0.55; }
+        .topo-line-6  { animation: none; stroke-width: 0.3; opacity: 0.6; }
+        .topo-line-7  { animation: none; stroke-width: 0.35; opacity: 0.5; }
+        .topo-line-8  { animation: none; stroke-width: 0.25; opacity: 0.5; }
+        .topo-line-9  { animation: none; stroke-width: 0.3; opacity: 0.42; }
+        .topo-line-10 { animation: none; stroke-width: 0.25; opacity: 0.38; }
 
         @keyframes blob-drift-a {
           0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
@@ -169,9 +286,61 @@ export default function App() {
           50%  { transform: translate3d(15px, 20px, 0) scale(1.06); }
           100% { transform: translate3d(-20px, -12px, 0) scale(0.95); }
         }
-        @keyframes line-shift {
-          0%   { transform: translate3d(-1.5%, 0, 0); }
-          100% { transform: translate3d(1.5%, -1%, 0); }
+        @keyframes line-wave-a {
+          0%   { transform: translate3d(-1.5%, 0.8%, 0) scale(1, 1); }
+          50%  { transform: translate3d(0.8%, -1.2%, 0) scale(1.01, 0.985); }
+          100% { transform: translate3d(1.8%, 0.4%, 0) scale(0.995, 1.01); }
+        }
+        @keyframes line-wave-b {
+          0%   { transform: translate3d(1.2%, -0.7%, 0) scale(1, 1); }
+          50%  { transform: translate3d(-0.9%, 1.1%, 0) scale(0.99, 1.01); }
+          100% { transform: translate3d(-1.6%, -0.3%, 0) scale(1.01, 0.99); }
+        }
+        @keyframes line-wave-c {
+          0%   { transform: translate3d(-0.8%, -0.3%, 0) scale(1, 1); }
+          50%  { transform: translate3d(1.4%, 1.2%, 0) scale(1.005, 0.99); }
+          100% { transform: translate3d(-1.1%, -1%, 0) scale(0.995, 1.01); }
+        }
+        @keyframes ambient-flow {
+          0%   { transform: translate3d(-2%, -1.5%, 0) scale(1); opacity: 0.52; }
+          50%  { transform: translate3d(1.5%, 1.8%, 0) scale(1.03); opacity: 0.62; }
+          100% { transform: translate3d(2.5%, -1%, 0) scale(0.99); opacity: 0.5; }
+        }
+        @keyframes topo-pan {
+          0%   { transform: translate3d(-1.2%, -0.8%, 0) scale(1.01); }
+          50%  { transform: translate3d(0.8%, 0.9%, 0) scale(1.03); }
+          100% { transform: translate3d(1.4%, -0.6%, 0) scale(1.02); }
+        }
+        @keyframes blob-field-drift {
+          0%   { transform: translate3d(-1.6%, 0.8%, 0) rotate(-0.4deg); }
+          50%  { transform: translate3d(1.2%, -1.4%, 0) rotate(0.6deg); }
+          100% { transform: translate3d(1.8%, 1%, 0) rotate(-0.3deg); }
+        }
+        @keyframes lines-field-drift {
+          0%   { transform: translate3d(-1.5%, 0.3%, 0); }
+          50%  { transform: translate3d(1.1%, -0.8%, 0); }
+          100% { transform: translate3d(1.6%, 0.6%, 0); }
+        }
+        @keyframes wave-field-drift {
+          0%   { transform: translate3d(-1%, -0.5%, 0) scale(1); }
+          50%  { transform: translate3d(0.9%, 0.9%, 0) scale(1.015); }
+          100% { transform: translate3d(1.3%, -0.7%, 0) scale(1.01); }
+        }
+        @keyframes loader-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .topo-line,
+          .topo-shape,
+          .topo-bg::after,
+          .topo-bg,
+          .topo-lines,
+          .topo-wave-canvas,
+          .topo-blobs {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
         }
 
         /* ── Header ── */
@@ -277,7 +446,7 @@ export default function App() {
           position: absolute;
           inset: 0;
           perspective: 1200px;
-          cursor: crosshair;
+          cursor: default;
         }
 
         .hero-canvas-perspective {
@@ -291,7 +460,7 @@ export default function App() {
         }
 
         .hero-canvas-wrap:hover .hero-canvas-perspective {
-          transition: transform 0.12s ease-out;
+          transition: transform 0.22s ease-out;
         }
 
         .hero-canvas-perspective canvas {
@@ -322,7 +491,7 @@ export default function App() {
           margin: 0;
         }
 
-        /* ── Side Cards (Lando Norris style) ── */
+        /* ── Side Cards ── */
         .landing-side-card {
           position: absolute;
           z-index: 4;
@@ -454,6 +623,7 @@ export default function App() {
           .hero-name {
             font-size: clamp(2rem, 11vw, 3.5rem);
           }
+
         }
       `}</style>
     </div>
