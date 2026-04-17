@@ -13,6 +13,8 @@ export const RIVE_DIR = "/rive";
 
 export const RIVE_ASSETS = {
   helmets: `${RIVE_DIR}/reef.riv`,
+  /** Expected: artboard `helmet_main`, state machine `helmet_interaction`, inputs per `InteractiveHelmetRive` */
+  helmetInteractive: `${RIVE_DIR}/helmet-interactive.riv`,
   signature: `${RIVE_DIR}/signature.riv`,
   circuits: `${RIVE_DIR}/circuits.riv`,
   btnUi: `${RIVE_DIR}/btn-ui.riv`,

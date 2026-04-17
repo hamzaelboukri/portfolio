@@ -71,6 +71,25 @@ export function TopoBackground() {
         </g>
       </svg>
 
+      {/* Lando-style: soft organic “ripple / topo” rings on white */}
+      <svg
+        className="topo-ripples"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <ellipse className="topo-re" cx={720} cy={450} rx={400} ry={270} transform="rotate(-8 720 450)" />
+          <ellipse className="topo-re" cx={720} cy={450} rx={320} ry={218} transform="rotate(-8 720 450)" />
+          <ellipse className="topo-re" cx={720} cy={450} rx={240} ry={165} transform="rotate(-8 720 450)" />
+          <ellipse className="topo-re" cx={720} cy={450} rx={165} ry={112} transform="rotate(-8 720 450)" />
+          <ellipse className="topo-re" cx={280} cy={260} rx={190} ry={128} transform="rotate(14 280 260)" />
+          <ellipse className="topo-re" cx={1180} cy={300} rx={210} ry={145} transform="rotate(-16 1180 300)" />
+          <ellipse className="topo-re" cx={380} cy={720} rx={240} ry={160} transform="rotate(8 380 720)" />
+          <ellipse className="topo-re" cx={1080} cy={740} rx={200} ry={130} transform="rotate(-10 1080 740)" />
+        </g>
+      </svg>
+
       <svg
         className="topo-lines"
         xmlns="http://www.w3.org/2000/svg"

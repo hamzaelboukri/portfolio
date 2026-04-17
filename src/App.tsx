@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FooterScrollReveal } from "./components/FooterScrollReveal";
-import { HelmetHero } from "./components/HelmetHero";
+import { HelmetHero, type HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroRive } from "./components/HeroRive";
 import { TopoBackground } from "./components/TopoBackground";
 import { RIVE_ASSETS } from "./riveAssets";
@@ -8,10 +8,37 @@ import { RIVE_ASSETS } from "./riveAssets";
 const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
 
+/** Larger spotlight + stronger blend so hero-3-Photoroom fills more of the portrait on hover */
+const HERO_HOVER_REVEAL: HeroCanvasHoverSettings = {
+  revealStrength: 1.44,
+  spotRadius: 1.52,
+  maskEllipseY: 1.92,
+  pointerDamp: 5.85,
+  hoverFadeDamp: 5.35,
+  parallax: 0.44,
+  overlayHoverZoom: 0.034,
+  overlayOpacity: 1,
+  overlaySaturation: 1.06,
+};
+
 function App() {
+  const landingRef = useRef<HTMLDivElement>(null);
   const [bootReady, setBootReady] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
+
+  useEffect(() => {
+    const root = landingRef.current;
+    if (!root) return;
+
+    const onMove = (e: MouseEvent) => {
+      root.style.setProperty("--mx", `${e.clientX}px`);
+      root.style.setProperty("--my", `${e.clientY}px`);
+    };
+
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -45,7 +72,7 @@ function App() {
   }, []);
 
   return (
-    <div className="landing">
+    <div className="landing" ref={landingRef}>
       {isLoading && (
         <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading website">
           <div className="boot-loader-ring" />
@@ -54,6 +81,8 @@ function App() {
       )}
 
       <TopoBackground />
+
+      <div className="landing-spotlight" aria-hidden />
 
       <header className={`landing-header${isLoading ? " is-booting" : ""}`}>
         <span className="landing-logo">
@@ -94,10 +123,12 @@ function App() {
               baseUrl={HERO_BASE}
               revealUrl={HERO_HOVER}
               portraitAlt="Hamza Elboukri"
+              hover={HERO_HOVER_REVEAL}
               onReady={() => setHeroReady(true)}
             />
 
-            <HeroRive src={RIVE_ASSETS.helmets} />
+            {/* Rive aligned on portrait zone (same focal area as hero-3 hover reveal) */}
+            <HeroRive className="hero-rive-layer--portrait" variant="portrait" src={RIVE_ASSETS.helmets} />
 
             <div className="hero-name-overlay" aria-hidden="true">
               <h1 className="hero-name">Hamza Elboukri</h1>
@@ -137,17 +168,52 @@ function App() {
         }
 
         .landing {
-          --paper: #f0ede5;
+          /* Lando-style: clean white + cursor “flashlight” via --mx/--my */
+          --paper: #ffffff;
+          --paper-hover: #f0f0f3;
+          --mx: 50vw;
+          --my: 50vh;
           --ink: #0a0a0a;
           --ink-soft: rgba(10, 10, 10, 0.45);
           --lime: #d4ff00;
-          --line: rgba(10, 10, 10, 0.07);
+          --line: rgba(10, 10, 10, 0.08);
+          /* Rive “liquid” helmet: lower = more portrait / hero-3 visible */
+          /* Lower so hero-3 PNG reveal stays the readable focal layer */
+          --hero-rive-opacity: 0.22;
 
           position: relative;
           min-height: 100vh;
           background: var(--paper);
           color: var(--ink);
           overflow-x: hidden;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='6' stroke='%23717171' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, auto;
+        }
+
+        .landing-spotlight {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          background: radial-gradient(
+            circle clamp(220px, 42vmin, 520px) at var(--mx, 50vw) var(--my, 50vh),
+            rgba(0, 0, 0, 0.09) 0%,
+            rgba(0, 0, 0, 0.045) 45%,
+            transparent 70%
+          );
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .landing-spotlight {
+            opacity: 0;
+          }
+        }
+
+        .landing a[href],
+        .landing button,
+        .landing [role='button'],
+        .landing .landing-store,
+        .landing .landing-menu {
+          cursor: pointer;
         }
 
         .boot-loader {
@@ -205,16 +271,18 @@ function App() {
         .topo-bg::after {
           content: "";
           position: absolute;
-          inset: -20%;
+          inset: -25%;
           background:
-            radial-gradient(45% 35% at 18% 22%, rgba(255, 255, 255, 0.45), transparent 70%),
-            radial-gradient(38% 32% at 82% 68%, rgba(0, 0, 0, 0.05), transparent 74%);
-          opacity: 0.6;
+            radial-gradient(50% 42% at 20% 30%, rgba(240, 242, 245, 0.85), transparent 72%),
+            radial-gradient(48% 40% at 78% 65%, rgba(230, 232, 236, 0.55), transparent 75%),
+            radial-gradient(35% 30% at 50% 88%, rgba(245, 246, 248, 0.5), transparent 70%);
+          opacity: 0.95;
           animation: none;
           z-index: 0;
         }
 
         .topo-blobs,
+        .topo-ripples,
         .topo-contours-h,
         .topo-lines,
         .topo-wave-canvas {
@@ -224,8 +292,21 @@ function App() {
           height: 100%;
         }
 
+        .topo-ripples {
+          z-index: 0;
+          opacity: 0.78;
+          pointer-events: none;
+        }
+
+        .topo-ripples .topo-re {
+          stroke: rgba(0, 0, 0, 0.048);
+          stroke-width: 0.52;
+          fill: none;
+          vector-effect: non-scaling-stroke;
+        }
+
         .topo-blobs {
-          color: rgba(10, 10, 10, 0.052);
+          color: rgba(0, 0, 0, 0.028);
           z-index: 0;
           animation: none;
         }
@@ -237,8 +318,8 @@ function App() {
         }
 
         .topo-h {
-          stroke: rgba(12, 12, 14, 0.19);
-          stroke-width: 0.55;
+          stroke: rgba(0, 0, 0, 0.07);
+          stroke-width: 0.48;
           stroke-linecap: round;
           stroke-linejoin: round;
           vector-effect: non-scaling-stroke;
@@ -254,7 +335,7 @@ function App() {
         .topo-h-13 { opacity: 0.92; }
         .topo-h-3,
         .topo-h-7,
-        .topo-h-11 { opacity: 0.65; stroke: rgba(10, 10, 12, 0.14); }
+        .topo-h-11 { opacity: 0.55; stroke: rgba(0, 0, 0, 0.055); }
         .topo-h-10,
         .topo-h-12,
         .topo-h-14 { opacity: 0.72; }
@@ -267,22 +348,22 @@ function App() {
         .topo-shape-e { animation: none; opacity: 0.5; }
 
         .topo-lines {
-          opacity: 0.28;
-          filter: blur(0.22px);
+          opacity: 0.42;
+          filter: blur(0.18px);
           z-index: 1;
           animation: none;
         }
         .topo-wave-canvas {
           z-index: 2;
-          opacity: 0.5;
-          filter: blur(0.4px);
-          mix-blend-mode: multiply;
+          opacity: 0.3;
+          filter: blur(0.32px);
+          mix-blend-mode: soft-light;
           animation: none;
         }
         .topo-line {
           fill: none;
-          stroke: rgba(12, 12, 14, 0.14);
-          stroke-width: 0.5;
+          stroke: rgba(0, 0, 0, 0.09);
+          stroke-width: 0.45;
           transform-origin: 50% 50%;
         }
         .topo-line-1  { animation: none; }
@@ -373,6 +454,7 @@ function App() {
           .topo-bg,
           .topo-contours-h,
           .topo-lines,
+          .topo-ripples,
           .topo-wave-canvas,
           .topo-blobs {
             animation-duration: 0.01ms !important;
@@ -440,8 +522,8 @@ function App() {
         .landing-menu {
           width: 44px;
           height: 44px;
-          border-radius: 10px;
-          border: 1px solid var(--line);
+          border-radius: 12px;
+          border: 1px solid rgba(10, 10, 10, 0.1);
           background: #fff;
           cursor: pointer;
           display: flex;
@@ -497,6 +579,32 @@ function App() {
           mix-blend-mode: soft-light;
         }
 
+        /* Centered “liquid” helmet read — soft edge + blend like Lando ref */
+        .hero-rive-layer--portrait {
+          inset: auto;
+          width: min(44vw, 480px);
+          max-height: min(56vh, 520px);
+          aspect-ratio: 1;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -54%);
+          opacity: var(--hero-rive-opacity);
+          mix-blend-mode: soft-light;
+          filter: saturate(1.08) contrast(1.04);
+          -webkit-mask-image: radial-gradient(
+            ellipse 76% 80% at 50% 45%,
+            #000 46%,
+            rgba(0, 0, 0, 0.65) 58%,
+            transparent 76%
+          );
+          mask-image: radial-gradient(
+            ellipse 76% 80% at 50% 45%,
+            #000 46%,
+            rgba(0, 0, 0, 0.65) 58%,
+            transparent 76%
+          );
+        }
+
         .hero-rive-layer canvas {
           display: block;
           width: 100% !important;
@@ -523,7 +631,7 @@ function App() {
           width: 100% !important;
           height: 100% !important;
           pointer-events: auto;
-          cursor: crosshair;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cg stroke='%23717171' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M12 4v4M12 16v4M4 12h4M16 12h4'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23717171'/%3E%3C/g%3E%3C/svg%3E") 12 12, crosshair;
           touch-action: none;
         }
 

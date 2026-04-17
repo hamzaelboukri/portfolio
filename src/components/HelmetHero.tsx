@@ -27,6 +27,8 @@ export type HeroCanvasHoverSettings = {
   overlayAdd?: [number, number, number];
   /** تشبع: 1 = أصلي، 0 = رمادي، قيم أعلى = ألوان أقوى */
   overlaySaturation?: number;
+  /** شفافية صورة hero-3 داخل الـ reveal: 1 = كامل، أقل = أخف (0–1) */
+  overlayOpacity?: number;
 };
 
 const HOVER_DEFAULTS: Required<HeroCanvasHoverSettings> = {
@@ -34,13 +36,14 @@ const HOVER_DEFAULTS: Required<HeroCanvasHoverSettings> = {
   hoverFadeDamp: 5.5,
   revealStrength: 1.22,
   spotRadius: 1.0,
-  parallax: 0.7,
-  overlayHoverZoom: 0.035,
+  parallax: 0.42,
+  overlayHoverZoom: 0.028,
   maskEllipseY: 2.45,
-  parallaxUvScale: 0.016,
+  parallaxUvScale: 0.011,
   overlayMul: [1, 1, 1],
   overlayAdd: [0, 0, 0],
   overlaySaturation: 1,
+  overlayOpacity: 1,
 };
 
 function mergeHover(h?: HeroCanvasHoverSettings): Required<HeroCanvasHoverSettings> {
@@ -79,6 +82,7 @@ const FRAGMENT = `
   uniform vec3 uOverlayMul;
   uniform vec3 uOverlayAdd;
   uniform float uOverlaySaturation;
+  uniform float uOverlayOpacity;
 
   float nhash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -141,29 +145,29 @@ const FRAGMENT = `
     float dist = length(d);
     float ang = atan(d.y, d.x);
     vec2 nq = vUv * 19.0 + uPointer * 31.0;
-    float n = nfbm(nq) + 0.48 * nfbm(nq * 1.85 + vec2(4.2, 9.1));
-    n += 0.12 * sin(ang * 5.0 + uPointer.x * 14.7 + uPointer.y * 9.3);
-    n += 0.06 * sin(vUv.x * 38.0 * uScreenAspect + n * 9.2);
-    float wobble = (n - 0.5) * 0.42;
+    float n = nfbm(nq) + 0.32 * nfbm(nq * 1.85 + vec2(4.2, 9.1));
+    n += 0.06 * sin(ang * 5.0 + uPointer.x * 14.7 + uPointer.y * 9.3);
+    n += 0.03 * sin(vUv.x * 38.0 * uScreenAspect + n * 9.2);
+    float wobble = (n - 0.5) * 0.27;
     float sigma = 0.22 * uSpotRadius;
     float distW = dist + wobble * sigma;
     float spot = exp(-distW * distW / (2.0 * sigma * sigma));
     float spotCore = pow(spot, 0.82);
     float alphaIn = outOverlay ? 0.0 : max(overlayCol.a, 0.88);
-    float mixAmount = clamp(hoverAct * spotCore * alphaIn * uRevealStrength, 0.0, 1.0);
+    float mixAmount = clamp(hoverAct * spotCore * alphaIn * uRevealStrength * uOverlayOpacity, 0.0, 1.0);
 
     float oin = outOverlay ? 0.0 : 1.0;
     vec2 dir = (uPointer - vec2(0.5, 0.5)) * 2.0;
     float dl = length(dir);
     vec2 dirn = dl > 0.001 ? dir / dl : vec2(1.0, 0.0);
-    float chroma = hoverAct * 0.0042 * oin;
+    float chroma = hoverAct * 0.0024 * oin;
     vec2 uvc = overlayUv;
     float r = texture2D(uOverlay, clamp(uvc + dirn * chroma, vec2(0.001), vec2(0.999))).r;
     float g = texture2D(uOverlay, uvc).g;
     float b = texture2D(uOverlay, clamp(uvc - dirn * chroma * 0.92, vec2(0.001), vec2(0.999))).b;
     vec3 overlayFx = vec3(r, g, b);
-    overlayFx *= 1.0 + 0.14 * hoverAct * oin;
-    overlayFx += vec3(0.03, 0.045, 0.07) * hoverAct * oin;
+    overlayFx *= 1.0 + 0.07 * hoverAct * oin;
+    overlayFx += vec3(0.015, 0.022, 0.035) * hoverAct * oin;
     vec3 overlayRgb = mix(overlayCol.rgb, overlayFx, hoverAct * oin);
 
     vec3 ov = overlayRgb * uOverlayMul + uOverlayAdd;
@@ -292,6 +296,7 @@ function HeroPlane({
         uOverlayMul: { value: new THREE.Vector3(...h.overlayMul) },
         uOverlayAdd: { value: new THREE.Vector3(...h.overlayAdd) },
         uOverlaySaturation: { value: h.overlaySaturation },
+        uOverlayOpacity: { value: h.overlayOpacity },
       },
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
@@ -334,6 +339,7 @@ function HeroPlane({
     (u.uOverlayMul.value as THREE.Vector3).set(...h.overlayMul);
     (u.uOverlayAdd.value as THREE.Vector3).set(...h.overlayAdd);
     u.uOverlaySaturation.value = h.overlaySaturation;
+    u.uOverlayOpacity.value = h.overlayOpacity;
   });
 
   if (!material) return null;
@@ -379,6 +385,7 @@ export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: 
       hover?.overlayAdd?.[1],
       hover?.overlayAdd?.[2],
       hover?.overlaySaturation,
+      hover?.overlayOpacity,
     ],
   );
 
@@ -431,7 +438,7 @@ export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: 
             powerPreference: "high-performance",
             outputColorSpace: THREE.SRGBColorSpace,
           }}
-          dpr={[1, 1.35]}
+          dpr={[1, 1.75]}
           onCreated={({ gl }) => {
             gl.setClearColor(0x000000, 0);
             gl.outputColorSpace = THREE.SRGBColorSpace;
