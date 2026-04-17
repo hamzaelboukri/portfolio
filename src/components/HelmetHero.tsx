@@ -1,6 +1,51 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
+
+/** كل اللي يخص hover ديال كانفاس الـ hero — بدّل هنا أو مرّر `hover` من `App` */
+export type HeroCanvasHoverSettings = {
+  /** تتبع الـ pointer (كلما كبر = أسرع) */
+  pointerDamp?: number;
+  /** دخول/خروج تأثير الـ hover */
+  hoverFadeDamp?: number;
+  /** قوة ظهور hero-3 داخل الماسك */
+  revealStrength?: number;
+  /** حجم البقعة (~1) */
+  spotRadius?: number;
+  /** بارالاكس على UV ديال hero-3 */
+  parallax?: number;
+  /** زوم بسيط على hero-3 وقت الـ hover */
+  overlayHoverZoom?: number;
+  /** يمدّ الماسك أفقياً (كلما صغر الرقم = شريط أعرض) */
+  maskEllipseY?: number;
+  /** مضاعف حركة البارالاكس فـ UV */
+  parallaxUvScale?: number;
+
+  /** ألوان صورة hero-3 (الـ overlay) فقط — ضرب RGB (1,1,1) = بدون تغيير */
+  overlayMul?: [number, number, number];
+  /** إضافة على RGB بعد الضرب (مثلاً [0.02,0,0] لإحمرار خفيف) */
+  overlayAdd?: [number, number, number];
+  /** تشبع: 1 = أصلي، 0 = رمادي، قيم أعلى = ألوان أقوى */
+  overlaySaturation?: number;
+};
+
+const HOVER_DEFAULTS: Required<HeroCanvasHoverSettings> = {
+  pointerDamp: 5.5,
+  hoverFadeDamp: 5.5,
+  revealStrength: 1.22,
+  spotRadius: 1.0,
+  parallax: 0.7,
+  overlayHoverZoom: 0.035,
+  maskEllipseY: 2.45,
+  parallaxUvScale: 0.016,
+  overlayMul: [1, 1, 1],
+  overlayAdd: [0, 0, 0],
+  overlaySaturation: 1,
+};
+
+function mergeHover(h?: HeroCanvasHoverSettings): Required<HeroCanvasHoverSettings> {
+  return { ...HOVER_DEFAULTS, ...h };
+}
 
 const VERTEX = `
   varying vec2 vUv;
@@ -26,8 +71,14 @@ const FRAGMENT = `
   uniform float uOverlayScale;
   uniform vec2 uOverlayOffset;
   uniform float uParallax;
+  uniform float uParallaxUvScale;
   uniform float uSpotRadius;
   uniform float uRevealStrength;
+  uniform float uOverlayHoverZoom;
+  uniform float uMaskEllipseY;
+  uniform vec3 uOverlayMul;
+  uniform vec3 uOverlayAdd;
+  uniform float uOverlaySaturation;
 
   float nhash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -70,14 +121,12 @@ const FRAGMENT = `
   void main() {
     float hoverAct = smoothstep(0.02, 0.98, uHover);
 
-    // Base (hamza): stable — no parallax / hover tilt on base image
     vec2 baseUv = fitCover(vUv, uScreenAspect, uBaseAspect, uBaseScale, uBaseOffset, vec2(0.0, 0.0));
 
-    // hero-3 (overlay): parallax + micro-zoom only while pointer is on canvas
-    vec2 overlayParallax = (uPointer - 0.5) * uParallax * 0.016 * hoverAct;
+    vec2 overlayParallax = (uPointer - 0.5) * uParallax * uParallaxUvScale * hoverAct;
     vec2 overlayUv0 = fitCover(vUv, uScreenAspect, uOverlayAspect, uOverlayScale, uOverlayOffset, overlayParallax);
     vec2 oc = overlayUv0 - 0.5;
-    oc *= 1.0 + 0.035 * hoverAct * hoverAct;
+    oc *= 1.0 + uOverlayHoverZoom * hoverAct * hoverAct;
     vec2 overlayUv = clamp(oc + 0.5, vec2(0.001), vec2(0.999));
 
     bool outBase = baseUv.x < 0.0 || baseUv.x > 1.0 || baseUv.y < 0.0 || baseUv.y > 1.0;
@@ -86,11 +135,9 @@ const FRAGMENT = `
     vec4 base = outBase ? vec4(0.0) : texture2D(uBase, baseUv);
     vec4 overlayCol = outOverlay ? vec4(0.0) : texture2D(uOverlay, overlayUv);
 
-    // Organic reveal mask (same for both layers' blend)
-    // Ellipse biased toward a horizontal "torn strip" (reference-style reveal), not a round spotlight
     vec2 d = vUv - uPointer;
     d.x *= uScreenAspect;
-    d.y *= 2.45;
+    d.y *= uMaskEllipseY;
     float dist = length(d);
     float ang = atan(d.y, d.x);
     vec2 nq = vUv * 19.0 + uPointer * 31.0;
@@ -105,7 +152,6 @@ const FRAGMENT = `
     float alphaIn = outOverlay ? 0.0 : max(overlayCol.a, 0.88);
     float mixAmount = clamp(hoverAct * spotCore * alphaIn * uRevealStrength, 0.0, 1.0);
 
-    // Hover styling only on hero-3 (chroma + lift + rim) — skip if UV outside overlay
     float oin = outOverlay ? 0.0 : 1.0;
     vec2 dir = (uPointer - vec2(0.5, 0.5)) * 2.0;
     float dl = length(dir);
@@ -120,7 +166,11 @@ const FRAGMENT = `
     overlayFx += vec3(0.03, 0.045, 0.07) * hoverAct * oin;
     vec3 overlayRgb = mix(overlayCol.rgb, overlayFx, hoverAct * oin);
 
-    vec3 outColor = mix(base.rgb, overlayRgb, mixAmount);
+    vec3 ov = overlayRgb * uOverlayMul + uOverlayAdd;
+    float lum = dot(ov, vec3(0.299, 0.587, 0.114));
+    ov = mix(vec3(lum), ov, uOverlaySaturation);
+
+    vec3 outColor = mix(base.rgb, ov, mixAmount);
     float outAlpha = max(base.a, mixAmount * overlayCol.a);
     gl_FragColor = vec4(outColor, outAlpha);
   }
@@ -132,6 +182,7 @@ function HeroPlane({
   pointer,
   hoverRef,
   resetTick,
+  hover,
   onReady,
 }: {
   baseUrl: string;
@@ -139,12 +190,16 @@ function HeroPlane({
   pointer: React.MutableRefObject<{ x: number; y: number }>;
   hoverRef: React.MutableRefObject<boolean>;
   resetTick: React.MutableRefObject<number>;
+  hover: Required<HeroCanvasHoverSettings>;
   onReady?: () => void;
 }) {
   const { size } = useThree();
-  const matRef = useRef<THREE.ShaderMaterial | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const [material, setMaterial] = useState<THREE.ShaderMaterial | null>(null);
   const lastResetTickRef = useRef(0);
   const readySentRef = useRef(false);
+  const hoverRefSettings = useRef(hover);
+  hoverRefSettings.current = hover;
 
   const [textures, setTextures] = useState<{
     base: THREE.Texture;
@@ -172,7 +227,10 @@ function HeroPlane({
     };
 
     loader.load(baseUrl, (tex) => {
-      if (disposed) { tex.dispose(); return; }
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
@@ -181,7 +239,10 @@ function HeroPlane({
     });
 
     loader.load(overlayUrl, (tex) => {
-      if (disposed) { tex.dispose(); return; }
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
@@ -204,6 +265,7 @@ function HeroPlane({
 
   useEffect(() => {
     if (!textures) return;
+    const h = hoverRefSettings.current;
 
     const mat = new THREE.ShaderMaterial({
       transparent: true,
@@ -221,43 +283,65 @@ function HeroPlane({
         uBaseOffset: { value: new THREE.Vector2(0.0, 0.088) },
         uOverlayScale: { value: 1.0 },
         uOverlayOffset: { value: new THREE.Vector2(-0.02, 0.014) },
-        uParallax: { value: 0.7 },
-        uSpotRadius: { value: 1.0 },
-        uRevealStrength: { value: 1.22 },
+        uParallax: { value: h.parallax },
+        uParallaxUvScale: { value: h.parallaxUvScale },
+        uSpotRadius: { value: h.spotRadius },
+        uRevealStrength: { value: h.revealStrength },
+        uOverlayHoverZoom: { value: h.overlayHoverZoom },
+        uMaskEllipseY: { value: h.maskEllipseY },
+        uOverlayMul: { value: new THREE.Vector3(...h.overlayMul) },
+        uOverlayAdd: { value: new THREE.Vector3(...h.overlayAdd) },
+        uOverlaySaturation: { value: h.overlaySaturation },
       },
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
     });
 
-    matRef.current = mat;
-    return () => { mat.dispose(); matRef.current = null; };
+    materialRef.current = mat;
+    setMaterial(mat);
+    return () => {
+      mat.dispose();
+      materialRef.current = null;
+      setMaterial(null);
+    };
   }, [textures, size.width, size.height]);
 
   useFrame((_state, delta) => {
-    const mat = matRef.current;
+    const mat = materialRef.current;
     if (!mat) return;
     const u = mat.uniforms;
+    const h = hoverRefSettings.current;
 
     if (resetTick.current !== lastResetTickRef.current) {
       lastResetTickRef.current = resetTick.current;
     }
 
     const p = u.uPointer.value as THREE.Vector2;
-    p.x = THREE.MathUtils.damp(p.x, pointer.current.x, 5.5, delta);
-    p.y = THREE.MathUtils.damp(p.y, 1 - pointer.current.y, 5.5, delta);
+    p.x = THREE.MathUtils.damp(p.x, pointer.current.x, h.pointerDamp, delta);
+    p.y = THREE.MathUtils.damp(p.y, 1 - pointer.current.y, h.pointerDamp, delta);
 
     const targetHover = hoverRef.current ? 1 : 0;
-    u.uHover.value = THREE.MathUtils.damp(u.uHover.value, targetHover, 5.5, delta);
+    u.uHover.value = THREE.MathUtils.damp(u.uHover.value, targetHover, h.hoverFadeDamp, delta);
 
     u.uScreenAspect.value = size.width / size.height;
+
+    u.uParallax.value = h.parallax;
+    u.uParallaxUvScale.value = h.parallaxUvScale;
+    u.uSpotRadius.value = h.spotRadius;
+    u.uRevealStrength.value = h.revealStrength;
+    u.uOverlayHoverZoom.value = h.overlayHoverZoom;
+    u.uMaskEllipseY.value = h.maskEllipseY;
+    (u.uOverlayMul.value as THREE.Vector3).set(...h.overlayMul);
+    (u.uOverlayAdd.value as THREE.Vector3).set(...h.overlayAdd);
+    u.uOverlaySaturation.value = h.overlaySaturation;
   });
 
-  if (!matRef.current) return null;
+  if (!material) return null;
 
   return (
     <mesh>
       <planeGeometry args={[2, 2]} />
-      <primitive object={matRef.current} attach="material" />
+      <primitive object={material} attach="material" />
     </mesh>
   );
 }
@@ -267,13 +351,36 @@ export type HelmetHeroProps = {
   revealUrl: string;
   portraitAlt?: string;
   onReady?: () => void;
+  /** تعديل سلوك الـ hover على هاد الكانفاس فقط */
+  hover?: HeroCanvasHoverSettings;
 };
 
-export function HelmetHero({ baseUrl, revealUrl, onReady }: HelmetHeroProps) {
+export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: HelmetHeroProps) {
   const pointer = useRef({ x: 0.5, y: 0.5 });
   const hoverRef = useRef(false);
   const resetTick = useRef(0);
   const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
+
+  const hoverMerged = useMemo(
+    () => mergeHover(hover),
+    [
+      hover?.pointerDamp,
+      hover?.hoverFadeDamp,
+      hover?.revealStrength,
+      hover?.spotRadius,
+      hover?.parallax,
+      hover?.overlayHoverZoom,
+      hover?.maskEllipseY,
+      hover?.parallaxUvScale,
+      hover?.overlayMul?.[0],
+      hover?.overlayMul?.[1],
+      hover?.overlayMul?.[2],
+      hover?.overlayAdd?.[0],
+      hover?.overlayAdd?.[1],
+      hover?.overlayAdd?.[2],
+      hover?.overlaySaturation,
+    ],
+  );
 
   const updatePointer = useCallback((e: PointerEvent, target: HTMLCanvasElement) => {
     const r = target.getBoundingClientRect();
@@ -313,6 +420,7 @@ export function HelmetHero({ baseUrl, revealUrl, onReady }: HelmetHeroProps) {
     <div
       className="hero-canvas-wrap"
       style={{ "--rx": "0deg", "--ry": "0deg" } as React.CSSProperties}
+      aria-label={portraitAlt ?? undefined}
     >
       <div className="hero-canvas-perspective">
         <Canvas
@@ -339,6 +447,7 @@ export function HelmetHero({ baseUrl, revealUrl, onReady }: HelmetHeroProps) {
               pointer={pointer}
               hoverRef={hoverRef}
               resetTick={resetTick}
+              hover={hoverMerged}
               onReady={onReady}
             />
           </Suspense>

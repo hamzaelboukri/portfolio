@@ -8,7 +8,7 @@ import { RIVE_ASSETS } from "./riveAssets";
 const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
 
-export default function App() {
+function App() {
   const [bootReady, setBootReady] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
@@ -687,3 +687,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
