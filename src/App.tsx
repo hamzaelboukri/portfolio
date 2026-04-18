@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FooterScrollReveal } from "./components/FooterScrollReveal";
 import { HelmetHero, type HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroRive } from "./components/HeroRive";
+import { HeroScrollShrink } from "./components/HeroScrollShrink";
 import { TopoBackground } from "./components/TopoBackground";
 import { RIVE_ASSETS } from "./riveAssets";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
 
 /** Larger spotlight + stronger blend so hero-3-Photoroom fills more of the portrait on hover */
 const HERO_HOVER_REVEAL: HeroCanvasHoverSettings = {
-  revealStrength: 1.44,
-  spotRadius: 1.52,
-  maskEllipseY: 1.92,
+  revealStrength: 1.5,
+  spotRadius: 1.58,
+  maskEllipseY: 1.88,
   pointerDamp: 5.85,
   hoverFadeDamp: 5.35,
   parallax: 0.44,
@@ -23,6 +28,12 @@ const HERO_HOVER_REVEAL: HeroCanvasHoverSettings = {
 
 function App() {
   const landingRef = useRef<HTMLDivElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const heroLineARef = useRef<HTMLParagraphElement>(null);
+  const heroLineBRef = useRef<HTMLParagraphElement>(null);
+  const heroSignatureRef = useRef<SVGSVGElement>(null);
+  const heroVisualRef = useRef<HTMLDivElement>(null);
+  const heroFxCardRef = useRef<HTMLDivElement>(null);
   const [bootReady, setBootReady] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
@@ -71,18 +82,80 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const trigger = heroSectionRef.current;
+    const lineA = heroLineARef.current;
+    const lineB = heroLineBRef.current;
+    const sig = heroSignatureRef.current;
+    const visual = heroVisualRef.current;
+    const fxCard = heroFxCardRef.current;
+    if (!trigger || !lineA || !lineB || !sig || !visual || !fxCard) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger,
+          start: "top top",
+          end: "+=140vh",
+          scrub: 1.2,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      tl.fromTo(
+          lineA,
+          { xPercent: -20, opacity: 0 },
+          { xPercent: 14, opacity: 1, ease: "none", duration: 1 },
+          0.58,
+        )
+        .fromTo(
+          lineB,
+          { xPercent: 20, opacity: 0 },
+          { xPercent: -14, opacity: 1, ease: "none", duration: 1 },
+          0.58,
+        )
+        .fromTo(
+          sig,
+          { opacity: 0, scale: 0.58, rotate: -14 },
+          { opacity: 1, scale: 1.08, rotate: 0, ease: "none", duration: 0.62 },
+          0.66,
+        )
+        .fromTo(
+          visual,
+          {
+            filter: "grayscale(0) blur(0px) brightness(1) contrast(1)",
+            opacity: 1,
+          },
+          {
+            filter: "grayscale(0.92) blur(2px) brightness(0.86) contrast(0.95)",
+            opacity: 0.92,
+            ease: "none",
+            duration: 1,
+          },
+          0.52,
+        )
+        .fromTo(
+          fxCard,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, ease: "none", duration: 0.78 },
+          0.52,
+        );
+    });
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="landing" ref={landingRef}>
+    <div className={`landing${isLoading ? "" : " is-ready"}`} ref={landingRef}>
       {isLoading && (
         <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading website">
           <div className="boot-loader-ring" />
           <span className="boot-loader-text">Loading experience...</span>
         </div>
       )}
-
-      <TopoBackground />
-
-      <div className="landing-spotlight" aria-hidden />
 
       <header className={`landing-header${isLoading ? " is-booting" : ""}`}>
         <span className="landing-logo">
@@ -103,7 +176,22 @@ function App() {
       </header>
 
       <main className={`landing-main${isLoading ? " is-booting" : ""}`}>
-        <section className="landing-hero">
+        <section className={`landing-first-screen${isLoading ? " is-booting" : ""}`} ref={heroSectionRef}>
+          <div className="landing-first-screen-headline" aria-hidden>
+            <p className="landing-first-screen-line landing-first-screen-line--lime" ref={heroLineARef}>
+              WE DID IT AT HOME WE DID IT AT HOME
+            </p>
+            <p className="landing-first-screen-line landing-first-screen-line--white" ref={heroLineBRef}>
+              FOREVER A BRITISH GP WEEKEND I WILL REMEMBER
+            </p>
+          </div>
+
+          <HeroScrollShrink triggerRef={heroSectionRef}>
+            <TopoBackground />
+
+            <div className="landing-spotlight" aria-hidden />
+
+            <section className="landing-hero">
           <aside className="landing-side-card landing-side-card-left">
             <span className="side-card-label">Next Project</span>
             <div className="side-card-divider" />
@@ -119,16 +207,33 @@ function App() {
           </aside>
 
           <div className="landing-hero-inner">
-            <HelmetHero
-              baseUrl={HERO_BASE}
-              revealUrl={HERO_HOVER}
-              portraitAlt="Hamza Elboukri"
-              hover={HERO_HOVER_REVEAL}
-              onReady={() => setHeroReady(true)}
-            />
+            <div className="landing-hero-visual" ref={heroVisualRef}>
+              <HelmetHero
+                baseUrl={HERO_BASE}
+                revealUrl={HERO_HOVER}
+                portraitAlt="Hamza Elboukri"
+                hover={HERO_HOVER_REVEAL}
+                onReady={() => setHeroReady(true)}
+              />
 
-            {/* Rive aligned on portrait zone (same focal area as hero-3 hover reveal) */}
-            <HeroRive className="hero-rive-layer--portrait" variant="portrait" src={RIVE_ASSETS.helmets} />
+              {/* Rive aligned on portrait zone (same focal area as hero-3 hover reveal) */}
+              <HeroRive className="hero-rive-layer--portrait" variant="portrait" src={RIVE_ASSETS.helmets} />
+            </div>
+
+            <div className="landing-hero-fx-card" ref={heroFxCardRef} aria-hidden />
+
+            <svg
+              className="landing-first-screen-signature"
+              viewBox="0 0 640 420"
+              aria-hidden
+              ref={heroSignatureRef}
+            >
+              <path d="M46 280 C140 210, 250 150, 338 116 C392 95, 452 87, 490 110 C522 132, 518 170, 476 200 C426 235, 322 256, 221 286" />
+              <path d="M240 355 L363 102" />
+              <path d="M306 334 C320 266, 360 224, 398 220 C416 218, 431 228, 428 248 C425 268, 401 287, 372 289" />
+              <path d="M359 300 L414 212 L399 308" />
+              <path d="M428 303 L506 296" />
+            </svg>
 
             <div className="hero-name-overlay" aria-hidden="true">
               <h1 className="hero-name">Hamza Elboukri</h1>
@@ -145,7 +250,25 @@ function App() {
             <div className="side-card-divider" />
             <span className="side-card-note">Move cursor<br/>to reveal</span>
           </aside>
+            </section>
+          </HeroScrollShrink>
         </section>
+
+        <div className="landing-sticky-stack">
+          <section
+            className="landing-sticky-panel landing-sticky-panel--image"
+            id="about"
+            aria-labelledby="about-heading"
+          >
+            <h2 id="about-heading" className="sr-only">Featured image section</h2>
+            <img
+              className="landing-sticky-image"
+              src={HERO_BASE}
+              alt="Featured section visual"
+              loading="lazy"
+            />
+          </section>
+        </div>
       </main>
 
       <FooterScrollReveal id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
@@ -168,9 +291,10 @@ function App() {
         }
 
         .landing {
-          /* Lando-style: clean white + cursor “flashlight” via --mx/--my */
+          /* Clean white base; section 1 shrinks while section 2 rises from below */
           --paper: #ffffff;
           --paper-hover: #f0f0f3;
+          --canvas: #141a12;
           --mx: 50vw;
           --my: 50vh;
           --ink: #0a0a0a;
@@ -183,7 +307,7 @@ function App() {
 
           position: relative;
           min-height: 100vh;
-          background: var(--paper);
+          background: var(--canvas);
           color: var(--ink);
           overflow-x: hidden;
           cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='6' stroke='%23717171' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, auto;
@@ -196,8 +320,8 @@ function App() {
           z-index: 0;
           background: radial-gradient(
             circle clamp(220px, 42vmin, 520px) at var(--mx, 50vw) var(--my, 50vh),
-            rgba(0, 0, 0, 0.09) 0%,
-            rgba(0, 0, 0, 0.045) 45%,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.05) 45%,
             transparent 70%
           );
         }
@@ -255,6 +379,51 @@ function App() {
         .is-booting {
           opacity: 0;
           pointer-events: none;
+        }
+
+        /* Cinematic first impression: start after loader hides (.is-ready) */
+        .landing-first-screen {
+          animation: none;
+        }
+
+        .is-ready .landing-first-screen {
+          animation: intro-rise 0.95s cubic-bezier(0.2, 0.72, 0.22, 1) both;
+        }
+
+        .landing-first-screen-shrink {
+          animation: none;
+          transform-origin: 50% 52%;
+          overflow: hidden;
+          clip-path: inset(0% 0% 0% 0% round 0px);
+        }
+
+        .is-ready .landing-first-screen-shrink {
+          animation:
+            intro-mask 1.05s cubic-bezier(0.2, 0.72, 0.22, 1) both;
+        }
+
+        .landing-header {
+          animation: none;
+        }
+
+        .is-ready .landing-header {
+          animation: intro-fade-up 0.85s cubic-bezier(0.22, 0.7, 0.28, 1) 0.15s both;
+        }
+
+        .landing-side-card-left {
+          animation: none;
+        }
+
+        .is-ready .landing-side-card-left {
+          animation: intro-fade-left 0.95s cubic-bezier(0.2, 0.72, 0.22, 1) 0.2s both;
+        }
+
+        .landing-side-card-right {
+          animation: none;
+        }
+
+        .is-ready .landing-side-card-right {
+          animation: intro-fade-right 0.95s cubic-bezier(0.2, 0.72, 0.22, 1) 0.24s both;
         }
 
         /* ── Background ── */
@@ -446,7 +615,38 @@ function App() {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        @keyframes intro-zoom {
+          0%   { transform: scale(1.08); filter: saturate(0.9) contrast(0.95); }
+          100% { transform: scale(1); filter: saturate(1) contrast(1); }
+        }
+        @keyframes intro-mask {
+          0%   { clip-path: inset(8% 9% 10% 9% round 30px); }
+          100% { clip-path: inset(0% 0% 0% 0% round 0px); }
+        }
+        @keyframes intro-rise {
+          0%   { transform: translate3d(0, 28px, 0); opacity: 0; }
+          100% { transform: translate3d(0, 0, 0); opacity: 1; }
+        }
+        @keyframes intro-fade-up {
+          0%   { transform: translate3d(0, -16px, 0); opacity: 0; }
+          100% { transform: translate3d(0, 0, 0); opacity: 1; }
+        }
+        @keyframes intro-fade-left {
+          0%   { transform: translate3d(-18px, 10px, 0); opacity: 0; }
+          100% { transform: translate3d(0, 0, 0); opacity: 1; }
+        }
+        @keyframes intro-fade-right {
+          0%   { transform: translate3d(18px, 10px, 0); opacity: 0; }
+          100% { transform: translate3d(0, 0, 0); opacity: 1; }
+        }
         @media (prefers-reduced-motion: reduce) {
+          .landing-first-screen,
+          .landing-first-screen-shrink,
+          .landing-header,
+          .landing-side-card-left,
+          .landing-side-card-right {
+            animation: none !important;
+          }
           .topo-h,
           .topo-line,
           .topo-shape,
@@ -544,21 +744,125 @@ function App() {
           border-radius: 1px;
         }
 
-        /* ── Hero ── */
+        /* ── First screen: topo + spotlight + header + hero scale together on scroll ── */
         .landing-main { padding: 0; }
+
+        .landing-first-screen {
+          position: relative;
+          min-height: 100vh;
+        }
+
+        .landing-first-screen-shrink {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          margin: 0;
+          min-height: 100vh;
+          border-radius: 0;
+          overflow: hidden;
+          border: 0;
+          background: var(--paper);
+          box-shadow: none;
+          will-change: transform;
+        }
 
         .landing-hero {
           position: relative;
           height: 100vh;
+          min-height: 100svh;
           display: flex;
           align-items: stretch;
         }
 
+        /* Lando-like overlay moved to FIRST section */
+        .landing-first-screen-headline {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 160vw;
+          pointer-events: none;
+          z-index: 1;
+          display: grid;
+          gap: clamp(0.35rem, 1vw, 0.7rem);
+          opacity: 0; /* Hidden before scroll; GSAP reveals after threshold */
+        }
+
+        .landing-first-screen-line {
+          font-family: "Bebas Neue", sans-serif;
+          font-size: clamp(2rem, 7.6vw, 5.6rem);
+          letter-spacing: 0.03em;
+          line-height: 0.88;
+          text-transform: uppercase;
+          text-align: center;
+          white-space: nowrap;
+          will-change: transform, opacity;
+        }
+
+        .landing-first-screen-line--lime {
+          color: rgba(195, 230, 0, 0.58);
+        }
+
+        .landing-first-screen-line--white {
+          color: rgba(248, 248, 248, 0.92);
+        }
+
+        .landing-first-screen-signature {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: min(78vw, 900px);
+          height: min(58vh, 520px);
+          transform: translate(-50%, -50%);
+          z-index: 3;
+          pointer-events: none;
+          overflow: visible;
+          transform-origin: 50% 50%;
+          filter: drop-shadow(0 4px 8px rgba(134, 188, 0, 0.45));
+          will-change: transform, opacity;
+          opacity: 0; /* Hidden before scroll; GSAP reveals after threshold */
+        }
+
+        .landing-first-screen-signature path {
+          fill: none;
+          stroke: #cfff14;
+          stroke-width: 8.5;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
         .landing-hero-inner {
           position: relative;
+          z-index: 1;
           width: 100%;
           height: 100%;
           pointer-events: none;
+        }
+
+        .landing-hero-visual {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          will-change: filter, opacity, transform;
+        }
+
+        .landing-hero-fx-card {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: min(42vw, 460px);
+          height: min(44vh, 350px);
+          background: rgba(185, 189, 181, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          box-shadow:
+            inset 0 0 80px rgba(255, 255, 255, 0.06),
+            0 16px 42px rgba(0, 0, 0, 0.28);
+          z-index: 2;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: opacity;
         }
 
         /* ── WebGL hero (z:1) + Rive canvas overlay (z:2), name (z:3) ── */
@@ -582,8 +886,8 @@ function App() {
         /* Centered “liquid” helmet read — soft edge + blend like Lando ref */
         .hero-rive-layer--portrait {
           inset: auto;
-          width: min(44vw, 480px);
-          max-height: min(56vh, 520px);
+          width: min(40vw, 420px);
+          max-height: min(51vh, 465px);
           aspect-ratio: 1;
           top: 50%;
           left: 50%;
@@ -734,6 +1038,57 @@ function App() {
           font-weight: 500;
         }
 
+        /* Section 2 now simple (effect moved to FIRST section) */
+        .landing-sticky-stack {
+          position: relative;
+          min-height: 190vh;
+          background: var(--paper);
+        }
+
+        .landing-sticky-panel {
+          position: sticky;
+          top: 0;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2.5rem);
+          background: var(--paper);
+          border-top: 1px solid var(--line);
+          z-index: 2;
+          overflow: hidden;
+        }
+
+        .landing-sticky-panel--image {
+          padding: clamp(0.8rem, 2.2vw, 1.4rem);
+        }
+
+        .landing-sticky-image {
+          display: block;
+          width: min(94vw, 1280px);
+          height: min(86vh, 900px);
+          object-fit: cover;
+          object-position: center top;
+          border-radius: 14px;
+          border: 1px solid rgba(10, 10, 10, 0.1);
+          box-shadow:
+            0 8px 34px rgba(10, 10, 10, 0.15),
+            0 40px 120px rgba(10, 10, 10, 0.22);
+          will-change: transform, filter, opacity;
+        }
+
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          margin: -1px;
+          padding: 0;
+          border: 0;
+          overflow: hidden;
+          clip: rect(0 0 0 0);
+          white-space: nowrap;
+        }
+
         /* ── Footer ── */
         .landing-footer {
           position: relative;
@@ -746,13 +1101,31 @@ function App() {
           justify-content: space-between;
           font-size: 0.85rem;
           color: var(--ink-soft);
+          background: var(--paper);
         }
 
         .landing-footer a { color: var(--ink); }
 
         /* ── Responsive ── */
         @media (max-width: 900px) {
-          .landing-hero { height: 100svh; }
+          .landing-first-screen { min-height: 100svh; }
+          .landing-hero {
+            height: 100svh;
+            min-height: 100svh;
+          }
+          .landing-first-screen-shrink {
+            width: 100%;
+            margin: 0;
+            min-height: 100svh;
+          }
+          .landing-sticky-stack { min-height: 170vh; }
+          .landing-first-screen-line {
+            font-size: clamp(1.7rem, 10vw, 3.1rem);
+          }
+          .landing-first-screen-signature {
+            width: min(92vw, 760px);
+            height: min(50vh, 380px);
+          }
 
           .landing-side-card-left {
             left: 0.85rem;
@@ -772,6 +1145,13 @@ function App() {
         @media (max-width: 640px) {
           .landing-logo { font-size: 1.4rem; }
           .landing-store { padding-inline: 0.85rem; }
+          .landing-sticky-stack { min-height: 150vh; }
+          .landing-first-screen-line {
+            font-size: clamp(1.45rem, 12vw, 2.4rem);
+          }
+          .landing-first-screen-signature path {
+            stroke-width: 7.2;
+          }
 
           .landing-side-card {
             width: 72px;

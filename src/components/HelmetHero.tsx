@@ -438,7 +438,7 @@ export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: 
             powerPreference: "high-performance",
             outputColorSpace: THREE.SRGBColorSpace,
           }}
-          dpr={[1, 1.75]}
+          dpr={[1, 1.85]}
           onCreated={({ gl }) => {
             gl.setClearColor(0x000000, 0);
             gl.outputColorSpace = THREE.SRGBColorSpace;

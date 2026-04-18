@@ -30,6 +30,9 @@ export function SmoothScrollProvider({ children }: Props) {
     const instance = new Lenis({
       smoothWheel: true,
       anchors: true,
+      /* Lower lerp = softer wheel smoothing (pairs better with ScrollTrigger scrub) */
+      lerp: 0.055,
+      wheelMultiplier: 0.92,
     });
 
     setLenis(instance);
