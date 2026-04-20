@@ -3,6 +3,7 @@ import { WaveFieldCanvas } from "./WaveFieldCanvas";
 export function TopoBackground() {
   return (
     <div className="topo-bg" aria-hidden>
+      <div className="topo-bg-shift">
       <svg
         className="topo-blobs"
         xmlns="http://www.w3.org/2000/svg"
@@ -108,6 +109,7 @@ export function TopoBackground() {
         <path className="topo-line topo-line-10" d="M1268 684 C1310 662, 1362 668, 1388 702 C1414 736, 1412 790, 1378 820 C1342 852, 1288 848, 1258 814 C1228 778, 1230 708, 1268 684 Z" />
       </svg>
       <WaveFieldCanvas className="topo-wave-canvas" />
+      </div>
     </div>
   );
 }

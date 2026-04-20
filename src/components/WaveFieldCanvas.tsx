@@ -91,9 +91,9 @@ export function WaveFieldCanvas({ className }: WaveFieldCanvasProps) {
       const py = pointerRef.current.y * height;
       const dx = x - px;
       const dy = y - py;
-      const dist = Math.hypot(dx, dy) + 200;
-      const inf = pointerRef.current.active ? (460 / dist) * 26 : 0;
-      y += (dy / dist) * inf * inf * 0.52;
+      const dist = Math.hypot(dx, dy) + 160;
+      const inf = pointerRef.current.active ? (520 / dist) * 36 : 0;
+      y += (dy / dist) * inf * inf * 0.68;
 
       return Math.min(height + padBottom, Math.max(-48, y));
     };
@@ -120,8 +120,11 @@ export function WaveFieldCanvas({ className }: WaveFieldCanvasProps) {
 
     const onMove = (e: PointerEvent) => {
       if (!width || !height) return;
-      pointerRef.current.tx = Math.min(Math.max(e.clientX / width, 0), 1);
-      pointerRef.current.ty = Math.min(Math.max(e.clientY / height, 0), 1);
+      const rect = canvas.getBoundingClientRect();
+      const rw = Math.max(rect.width, 1);
+      const rh = Math.max(rect.height, 1);
+      pointerRef.current.tx = Math.min(Math.max((e.clientX - rect.left) / rw, 0), 1);
+      pointerRef.current.ty = Math.min(Math.max((e.clientY - rect.top) / rh, 0), 1);
       pointerRef.current.active = true;
     };
 
@@ -145,8 +148,8 @@ export function WaveFieldCanvas({ className }: WaveFieldCanvasProps) {
       ctx.fillRect(0, 0, width, height);
 
       const p = pointerRef.current;
-      p.x += (p.tx - p.x) * 0.08;
-      p.y += (p.ty - p.y) * 0.08;
+      p.x += (p.tx - p.x) * 0.14;
+      p.y += (p.ty - p.y) * 0.14;
 
       const padBottom = height * 0.18;
       const bottomEdge = height + padBottom;
@@ -180,7 +183,7 @@ export function WaveFieldCanvas({ className }: WaveFieldCanvasProps) {
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        const pulse = pointerRef.current.active ? 0.055 : 0;
+        const pulse = pointerRef.current.active ? 0.09 : 0;
         ctx.strokeStyle = `rgba(10, 10, 10, ${(L.strokeAlpha + pulse).toFixed(3)})`;
         ctx.lineWidth = 1.35;
         ctx.stroke();
@@ -193,7 +196,7 @@ export function WaveFieldCanvas({ className }: WaveFieldCanvasProps) {
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        const rp = pointerRef.current.active ? 0.035 : 0;
+        const rp = pointerRef.current.active ? 0.055 : 0;
         ctx.strokeStyle = `rgba(10, 10, 10, ${(R.alpha + rp).toFixed(3)})`;
         ctx.lineWidth = R.width;
         ctx.stroke();

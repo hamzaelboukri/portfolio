@@ -33,7 +33,6 @@ function App() {
   const heroLineBRef = useRef<HTMLParagraphElement>(null);
   const heroSignatureRef = useRef<SVGSVGElement>(null);
   const heroVisualRef = useRef<HTMLDivElement>(null);
-  const heroFxCardRef = useRef<HTMLDivElement>(null);
   const [bootReady, setBootReady] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
@@ -45,6 +44,11 @@ function App() {
     const onMove = (e: MouseEvent) => {
       root.style.setProperty("--mx", `${e.clientX}px`);
       root.style.setProperty("--my", `${e.clientY}px`);
+      /* Cursor parallax: topo SVG + wave layer shift with pointer */
+      const nx = e.clientX / window.innerWidth - 0.5;
+      const ny = e.clientY / window.innerHeight - 0.5;
+      root.style.setProperty("--look-x", `${(-nx * 32).toFixed(2)}px`);
+      root.style.setProperty("--look-y", `${(-ny * 26).toFixed(2)}px`);
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
@@ -88,8 +92,7 @@ function App() {
     const lineB = heroLineBRef.current;
     const sig = heroSignatureRef.current;
     const visual = heroVisualRef.current;
-    const fxCard = heroFxCardRef.current;
-    if (!trigger || !lineA || !lineB || !sig || !visual || !fxCard) return;
+    if (!trigger || !lineA || !lineB || !sig || !visual) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = gsap.context(() => {
@@ -97,7 +100,7 @@ function App() {
         scrollTrigger: {
           trigger,
           start: "top top",
-          end: "+=140vh",
+          end: "+=150vh",
           scrub: 1.2,
           invalidateOnRefresh: true,
         },
@@ -117,8 +120,8 @@ function App() {
         )
         .fromTo(
           sig,
-          { opacity: 0, scale: 0.58, rotate: -14 },
-          { opacity: 1, scale: 1.08, rotate: 0, ease: "none", duration: 0.62 },
+          { opacity: 0, scale: 0.52, rotate: -14 },
+          { opacity: 1, scale: 1.14, rotate: 0, ease: "none", duration: 0.62 },
           0.66,
         )
         .fromTo(
@@ -133,12 +136,6 @@ function App() {
             ease: "none",
             duration: 1,
           },
-          0.52,
-        )
-        .fromTo(
-          fxCard,
-          { autoAlpha: 0 },
-          { autoAlpha: 1, ease: "none", duration: 0.78 },
           0.52,
         );
     });
@@ -186,11 +183,10 @@ function App() {
             </p>
           </div>
 
-          <HeroScrollShrink triggerRef={heroSectionRef}>
+          <HeroScrollShrink triggerRef={heroSectionRef} themeSurfaceRef={landingRef}>
+            {/* Topo + wave above white paper, below WebGL — transparent canvas shows lines + animation immediately */}
             <TopoBackground />
-
-            <div className="landing-spotlight" aria-hidden />
-
+            <div className="landing-spotlight landing-spotlight--hero-stack" aria-hidden />
             <section className="landing-hero">
           <aside className="landing-side-card landing-side-card-left">
             <span className="side-card-label">Next Project</span>
@@ -220,7 +216,7 @@ function App() {
               <HeroRive className="hero-rive-layer--portrait" variant="portrait" src={RIVE_ASSETS.helmets} />
             </div>
 
-            <div className="landing-hero-fx-card" ref={heroFxCardRef} aria-hidden />
+            <div className="landing-hero-fx-card" aria-hidden />
 
             <svg
               className="landing-first-screen-signature"
@@ -294,7 +290,8 @@ function App() {
           /* Clean white base; section 1 shrinks while section 2 rises from below */
           --paper: #ffffff;
           --paper-hover: #f0f0f3;
-          --canvas: #141a12;
+          /* Deep racing green — reads clearly when hero paper fades on scroll */
+          --canvas: #1e3228;
           --mx: 50vw;
           --my: 50vh;
           --ink: #0a0a0a;
@@ -304,6 +301,14 @@ function App() {
           /* Rive “liquid” helmet: lower = more portrait / hero-3 visible */
           /* Lower so hero-3 PNG reveal stays the readable focal layer */
           --hero-rive-opacity: 0.22;
+          /* Topo: dark ink at first paint (white hero); HeroScrollShrink tweens to light on green */
+          --topo-stroke: rgba(0, 0, 0, 0.12);
+          --topo-stroke-mid: rgba(0, 0, 0, 0.082);
+          --topo-stroke-soft: rgba(0, 0, 0, 0.056);
+          --topo-blob-fill: rgba(0, 0, 0, 0.042);
+          --topo-mist-opacity: 0.7;
+          --look-x: 0px;
+          --look-y: 0px;
 
           position: relative;
           min-height: 100vh;
@@ -327,7 +332,8 @@ function App() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .landing-spotlight {
+          .landing-spotlight,
+          .landing-spotlight--hero-stack {
             opacity: 0;
           }
         }
@@ -392,7 +398,7 @@ function App() {
 
         .landing-first-screen-shrink {
           animation: none;
-          transform-origin: 50% 52%;
+          transform-origin: 50% 50%;
           overflow: hidden;
           clip-path: inset(0% 0% 0% 0% round 0px);
         }
@@ -434,7 +440,17 @@ function App() {
           z-index: 0;
           overflow: hidden;
           isolation: isolate;
-          animation: none;
+          animation: topo-pan 52s ease-in-out infinite alternate;
+        }
+
+        .topo-bg-shift {
+          position: absolute;
+          inset: -4%;
+          width: 108%;
+          height: 108%;
+          pointer-events: none;
+          transform: translate3d(var(--look-x, 0px), var(--look-y, 0px), 0);
+          will-change: transform;
         }
 
         .topo-bg::after {
@@ -442,11 +458,11 @@ function App() {
           position: absolute;
           inset: -25%;
           background:
-            radial-gradient(50% 42% at 20% 30%, rgba(240, 242, 245, 0.85), transparent 72%),
-            radial-gradient(48% 40% at 78% 65%, rgba(230, 232, 236, 0.55), transparent 75%),
-            radial-gradient(35% 30% at 50% 88%, rgba(245, 246, 248, 0.5), transparent 70%);
-          opacity: 0.95;
-          animation: none;
+            radial-gradient(50% 42% at 20% 30%, rgba(255, 255, 255, 0.14), transparent 72%),
+            radial-gradient(48% 40% at 78% 65%, rgba(255, 255, 255, 0.09), transparent 75%),
+            radial-gradient(35% 30% at 50% 88%, rgba(255, 255, 255, 0.08), transparent 70%);
+          opacity: var(--topo-mist-opacity, 0.7);
+          animation: ambient-flow 46s ease-in-out infinite alternate;
           z-index: 0;
         }
 
@@ -465,29 +481,31 @@ function App() {
           z-index: 0;
           opacity: 0.78;
           pointer-events: none;
+          animation: topo-pan 62s ease-in-out infinite alternate;
         }
 
         .topo-ripples .topo-re {
-          stroke: rgba(0, 0, 0, 0.048);
+          stroke: var(--topo-stroke-soft);
           stroke-width: 0.52;
           fill: none;
           vector-effect: non-scaling-stroke;
         }
 
         .topo-blobs {
-          color: rgba(0, 0, 0, 0.028);
+          color: var(--topo-blob-fill);
           z-index: 0;
-          animation: none;
+          animation: blob-field-drift 58s ease-in-out infinite alternate;
         }
 
         .topo-contours-h {
           z-index: 1;
-          opacity: 0.88;
+          opacity: 1;
           pointer-events: none;
+          animation: topo-pan 68s ease-in-out infinite alternate;
         }
 
         .topo-h {
-          stroke: rgba(0, 0, 0, 0.07);
+          stroke: var(--topo-stroke-mid);
           stroke-width: 0.48;
           stroke-linecap: round;
           stroke-linejoin: round;
@@ -504,47 +522,47 @@ function App() {
         .topo-h-13 { opacity: 0.92; }
         .topo-h-3,
         .topo-h-7,
-        .topo-h-11 { opacity: 0.55; stroke: rgba(0, 0, 0, 0.055); }
+        .topo-h-11 { opacity: 0.55; stroke: var(--topo-stroke-soft); }
         .topo-h-10,
         .topo-h-12,
         .topo-h-14 { opacity: 0.72; }
 
         .topo-shape { transform-origin: center; }
-        .topo-shape-a { animation: none; }
-        .topo-shape-b { animation: none; opacity: 0.85; }
-        .topo-shape-c { animation: none; opacity: 0.7; }
-        .topo-shape-d { animation: none; opacity: 0.6; }
-        .topo-shape-e { animation: none; opacity: 0.5; }
+        .topo-shape-a { animation: blob-drift-a 40s ease-in-out infinite alternate; }
+        .topo-shape-b { animation: blob-drift-b 46s ease-in-out infinite alternate; opacity: 0.85; }
+        .topo-shape-c { animation: blob-drift-c 42s ease-in-out infinite alternate; opacity: 0.7; }
+        .topo-shape-d { animation: blob-drift-d 50s ease-in-out infinite alternate; opacity: 0.6; }
+        .topo-shape-e { animation: blob-drift-e 44s ease-in-out infinite alternate; opacity: 0.5; }
 
         .topo-lines {
-          opacity: 0.42;
+          opacity: 0.62;
           filter: blur(0.18px);
           z-index: 1;
-          animation: none;
+          animation: lines-field-drift 48s ease-in-out infinite alternate;
         }
         .topo-wave-canvas {
           z-index: 2;
-          opacity: 0.3;
+          opacity: 0.52;
           filter: blur(0.32px);
           mix-blend-mode: soft-light;
-          animation: none;
+          animation: wave-field-drift 38s ease-in-out infinite alternate;
         }
         .topo-line {
           fill: none;
-          stroke: rgba(0, 0, 0, 0.09);
+          stroke: var(--topo-stroke);
           stroke-width: 0.45;
           transform-origin: 50% 50%;
         }
-        .topo-line-1  { animation: none; }
-        .topo-line-2  { animation: none; }
-        .topo-line-3  { animation: none; stroke-width: 0.35; }
-        .topo-line-4  { animation: none; stroke-width: 0.4; }
-        .topo-line-5  { animation: none; stroke-width: 0.32; opacity: 0.72; }
-        .topo-line-6  { animation: none; stroke-width: 0.32; opacity: 0.76; }
-        .topo-line-7  { animation: none; stroke-width: 0.36; opacity: 0.62; }
-        .topo-line-8  { animation: none; stroke-width: 0.28; opacity: 0.65; }
-        .topo-line-9  { animation: none; stroke-width: 0.32; opacity: 0.58; }
-        .topo-line-10 { animation: none; stroke-width: 0.28; opacity: 0.55; }
+        .topo-line-1  { animation: line-wave-a 34s ease-in-out infinite alternate; }
+        .topo-line-2  { animation: line-wave-b 38s ease-in-out infinite alternate; }
+        .topo-line-3  { animation: line-wave-c 36s ease-in-out infinite alternate; stroke-width: 0.35; }
+        .topo-line-4  { animation: line-wave-a 40s ease-in-out infinite alternate; stroke-width: 0.4; }
+        .topo-line-5  { animation: line-wave-b 32s ease-in-out infinite alternate; stroke-width: 0.32; opacity: 0.72; }
+        .topo-line-6  { animation: line-wave-c 42s ease-in-out infinite alternate; stroke-width: 0.32; opacity: 0.76; }
+        .topo-line-7  { animation: line-wave-a 36s ease-in-out infinite alternate; stroke-width: 0.36; opacity: 0.62; }
+        .topo-line-8  { animation: line-wave-b 44s ease-in-out infinite alternate; stroke-width: 0.28; opacity: 0.65; }
+        .topo-line-9  { animation: line-wave-c 30s ease-in-out infinite alternate; stroke-width: 0.32; opacity: 0.58; }
+        .topo-line-10 { animation: line-wave-a 41s ease-in-out infinite alternate; stroke-width: 0.28; opacity: 0.55; }
 
         @keyframes blob-drift-a {
           0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
@@ -646,6 +664,9 @@ function App() {
           .landing-side-card-left,
           .landing-side-card-right {
             animation: none !important;
+          }
+          .topo-bg-shift {
+            transform: none !important;
           }
           .topo-h,
           .topo-line,
@@ -759,15 +780,35 @@ function App() {
           margin: 0;
           min-height: 100vh;
           border-radius: 0;
-          overflow: hidden;
+          overflow: visible;
           border: 0;
-          background: var(--paper);
+          background: transparent;
           box-shadow: none;
           will-change: transform;
         }
 
+        /* Paper (0) → topo + wave (1) → portrait canvas (2): WebGL alpha shows lines without scrolling */
+        .landing-first-screen-shrink .topo-bg {
+          z-index: 1;
+        }
+
+        .landing-spotlight--hero-stack {
+          z-index: 1;
+        }
+
+        /* White hero + faint map lines visible through paper */
+        .landing-hero-paper {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background: var(--paper);
+          opacity: 0.86;
+        }
+
         .landing-hero {
           position: relative;
+          z-index: 2;
           height: 100vh;
           min-height: 100svh;
           display: flex;
@@ -811,8 +852,8 @@ function App() {
           position: absolute;
           left: 50%;
           top: 50%;
-          width: min(78vw, 900px);
-          height: min(58vh, 520px);
+          width: min(96vw, 1240px);
+          height: min(76vh, 720px);
           transform: translate(-50%, -50%);
           z-index: 3;
           pointer-events: none;
@@ -826,7 +867,7 @@ function App() {
         .landing-first-screen-signature path {
           fill: none;
           stroke: #cfff14;
-          stroke-width: 8.5;
+          stroke-width: 10.5;
           stroke-linecap: round;
           stroke-linejoin: round;
         }
@@ -982,6 +1023,11 @@ function App() {
         .landing-side-card-left {
           left: clamp(0.5rem, 1.5vw, 1.25rem);
           bottom: 10%;
+          background: transparent;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          border: none;
+          box-shadow: none;
         }
 
         .landing-side-card-right {
@@ -1123,8 +1169,8 @@ function App() {
             font-size: clamp(1.7rem, 10vw, 3.1rem);
           }
           .landing-first-screen-signature {
-            width: min(92vw, 760px);
-            height: min(50vh, 380px);
+            width: min(98vw, 1020px);
+            height: min(64vh, 560px);
           }
 
           .landing-side-card-left {
@@ -1150,7 +1196,7 @@ function App() {
             font-size: clamp(1.45rem, 12vw, 2.4rem);
           }
           .landing-first-screen-signature path {
-            stroke-width: 7.2;
+            stroke-width: 9;
           }
 
           .landing-side-card {
