@@ -1,8 +1,9 @@
 :root {
-  --bg: #f2efe8;
-  --fg: #0a0a0a;
+  /* Page canvas — matches `.landing` --canvas in App */
+  --bg: #2d3222;
+  --fg: #f0f0eb;
   --lime: #d4ff00;
-  --muted: rgba(10, 10, 10, 0.55);
+  --muted: rgba(240, 240, 235, 0.55);
 }
 
 *,

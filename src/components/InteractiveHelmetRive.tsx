@@ -129,7 +129,7 @@ export class InteractiveHelmetRiveErrorBoundary extends Component<
               margin: "0 auto",
               display: "grid",
               placeItems: "center",
-              background: "linear-gradient(145deg, #1e2118, #282c20)",
+              background: "linear-gradient(145deg, #2d3222, #3a4030)",
               color: "#d2ff00",
               fontSize: 13,
               padding: 16,

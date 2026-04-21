@@ -5,6 +5,8 @@ import { FooterScrollReveal } from "./components/FooterScrollReveal";
 import { HelmetHero, type HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroRive } from "./components/HeroRive";
 import { HeroScrollShrink } from "./components/HeroScrollShrink";
+import { CanvasToBlackRamp } from "./components/CanvasToBlackRamp";
+import { SkillsHallOfFame } from "./components/SkillsHallOfFame";
 import { TopoBackground } from "./components/TopoBackground";
 import { RIVE_ASSETS } from "./riveAssets";
 
@@ -252,19 +254,56 @@ function App() {
 
         <div className="landing-sticky-stack">
           <section
-            className="landing-sticky-panel landing-sticky-panel--image"
-            id="about"
-            aria-labelledby="about-heading"
+            className="landing-sticky-panel landing-sticky-panel--dev-manifesto"
+            id="philosophy"
+            aria-labelledby="dev-manifesto-heading"
           >
-            <h2 id="about-heading" className="sr-only">Featured image section</h2>
-            <img
-              className="landing-sticky-image"
-              src={HERO_BASE}
-              alt="Featured section visual"
-              loading="lazy"
-            />
+            <h2 id="dev-manifesto-heading" className="sr-only">Developer philosophy</h2>
+            <div className="dev-manifesto-inner">
+              <div className="dev-manifesto-badge">
+                <svg
+                  className="dev-manifesto-emblem"
+                  viewBox="0 0 200 72"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <g
+                    stroke="rgba(245, 243, 235, 0.88)"
+                    strokeWidth="1.15"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  >
+                    <path d="M18 46c8-22 28-34 48-30c-6 10-10 22-10 34M34 22c4 8 6 18 4 28M26 38c6-4 14-6 22-4" />
+                    <path d="M182 46c-8-22-28-34-48-30c6 10 10 22 10 34M166 22c-4 8-6 18-4 28M174 38c-6-4-14-6-22-4" />
+                    <ellipse cx="100" cy="40" rx="17" ry="15" />
+                    <path d="M83 38h34M100 28v22" />
+                  </g>
+                </svg>
+                <p className="dev-manifesto-tagline">TYPESCRIPT · OPEN WEB · SINCE 2023</p>
+              </div>
+              <p className="dev-manifesto-text">
+                <span className="dev-manifesto-line">
+                  <span className="dev-manifesto-highlight">PUSHING</span> QUALITY,
+                </span>
+                <span className="dev-manifesto-line">
+                  SHIPPING FOR <span className="dev-manifesto-highlight">USERS</span>,
+                </span>
+                <span className="dev-manifesto-line">BRINGING IT ALL IN</span>
+                <span className="dev-manifesto-line">EVERY REPO. DEFINING A</span>
+                <span className="dev-manifesto-line">
+                  <span className="dev-manifesto-highlight">CRAFT</span> IN TYPESCRIPT
+                </span>
+                <span className="dev-manifesto-line">ON THE WEB AND</span>
+                <span className="dev-manifesto-line">IN PRODUCTION.</span>
+              </p>
+            </div>
           </section>
         </div>
+
+        <CanvasToBlackRamp />
+        <SkillsHallOfFame />
       </main>
 
       <FooterScrollReveal id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
@@ -291,7 +330,7 @@ function App() {
           --paper: #ffffff;
           --paper-hover: #f0f0f3;
           /* Deep racing green — reads clearly when hero paper fades on scroll */
-          --canvas: #1e3228;
+          --canvas: #2d3222;
           --mx: 50vw;
           --my: 50vh;
           --ink: #0a0a0a;
@@ -658,6 +697,9 @@ function App() {
           100% { transform: translate3d(0, 0, 0); opacity: 1; }
         }
         @media (prefers-reduced-motion: reduce) {
+          .dev-manifesto-inner {
+            transform: none !important;
+          }
           .landing-first-screen,
           .landing-first-screen-shrink,
           .landing-header,
@@ -700,6 +742,7 @@ function App() {
           justify-content: space-between;
           padding: 1.25rem clamp(1.25rem, 3vw, 2.5rem);
           pointer-events: none;
+          background: transparent;
         }
 
         .landing-logo {
@@ -1084,11 +1127,12 @@ function App() {
           font-weight: 500;
         }
 
-        /* Section 2 now simple (effect moved to FIRST section) */
+        /* Wraps sticky manifesto; height comes from the panel (min 100vh). Do not add extra
+           min-height here — a tall min-height (e.g. 190vh) only created empty canvas scroll
+           before the skills section below. */
         .landing-sticky-stack {
           position: relative;
-          min-height: 190vh;
-          background: var(--paper);
+          background: var(--canvas);
         }
 
         .landing-sticky-panel {
@@ -1099,28 +1143,86 @@ function App() {
           align-items: center;
           justify-content: center;
           padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2.5rem);
-          background: var(--paper);
-          border-top: 1px solid var(--line);
+          background: var(--canvas);
           z-index: 2;
           overflow: hidden;
         }
 
-        .landing-sticky-panel--image {
-          padding: clamp(0.8rem, 2.2vw, 1.4rem);
+        /* McLaren-style editorial block: near-black, serif stack, emblem, acid lime hits */
+        .landing-sticky-panel--dev-manifesto {
+          position: relative;
+          background: var(--canvas);
+          padding: clamp(1.5rem, 4vh, 2.5rem) clamp(1.25rem, 5vw, 2rem);
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          box-sizing: border-box;
         }
 
-        .landing-sticky-image {
+        .landing-sticky-panel--dev-manifesto::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: radial-gradient(ellipse 80% 45% at 50% 20%, rgba(212, 255, 0, 0.045), transparent 55%);
+          z-index: 0;
+        }
+
+        .dev-manifesto-inner {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: min(40rem, 94vw);
+          margin: 0 auto;
+          text-align: center;
+          transform: translateY(-6vh);
+        }
+
+        .dev-manifesto-badge {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: clamp(1.5rem, 4vh, 2.25rem);
+          color: rgba(245, 243, 235, 0.9);
+        }
+
+        .dev-manifesto-emblem {
+          width: min(200px, 52vw);
+          height: auto;
+          margin-bottom: 0.85rem;
+          filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.4));
+        }
+
+        .dev-manifesto-tagline {
+          font-family: "Inter", system-ui, sans-serif;
+          font-size: 0.52rem;
+          font-weight: 600;
+          letter-spacing: 0.42em;
+          text-transform: uppercase;
+          color: rgba(245, 243, 235, 0.55);
+          margin: 0;
+        }
+
+        .dev-manifesto-text {
+          font-family: "Fraunces", "Georgia", serif;
+          font-optical-sizing: auto;
+          font-weight: 700;
+          font-size: clamp(1.75rem, 3.85vw, 3.15rem);
+          line-height: 0.82;
+          letter-spacing: -0.015em;
+          text-transform: uppercase;
+          color: rgba(245, 243, 235, 0.94);
+          margin: 0;
+          font-variation-settings: "opsz" 72;
+        }
+
+        .dev-manifesto-line {
           display: block;
-          width: min(94vw, 1280px);
-          height: min(86vh, 900px);
-          object-fit: cover;
-          object-position: center top;
-          border-radius: 14px;
-          border: 1px solid rgba(10, 10, 10, 0.1);
-          box-shadow:
-            0 8px 34px rgba(10, 10, 10, 0.15),
-            0 40px 120px rgba(10, 10, 10, 0.22);
-          will-change: transform, filter, opacity;
+        }
+
+        .dev-manifesto-highlight {
+          color: #d4ff00;
+          font-weight: 800;
         }
 
         .sr-only {
@@ -1164,7 +1266,6 @@ function App() {
             margin: 0;
             min-height: 100svh;
           }
-          .landing-sticky-stack { min-height: 170vh; }
           .landing-first-screen-line {
             font-size: clamp(1.7rem, 10vw, 3.1rem);
           }
@@ -1191,7 +1292,14 @@ function App() {
         @media (max-width: 640px) {
           .landing-logo { font-size: 1.4rem; }
           .landing-store { padding-inline: 0.85rem; }
-          .landing-sticky-stack { min-height: 150vh; }
+          .dev-manifesto-text {
+            font-size: clamp(1.5rem, 7.5vw, 2.45rem);
+          }
+
+          .dev-manifesto-inner {
+            transform: translateY(-4vh);
+          }
+
           .landing-first-screen-line {
             font-size: clamp(1.45rem, 12vw, 2.4rem);
           }

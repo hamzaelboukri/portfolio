@@ -30,9 +30,26 @@ export function SmoothScrollProvider({ children }: Props) {
     const instance = new Lenis({
       smoothWheel: true,
       anchors: true,
-      /* Lower lerp = softer wheel smoothing (pairs better with ScrollTrigger scrub) */
-      lerp: 0.055,
-      wheelMultiplier: 0.92,
+      /* Softer glide + less delta per wheel tick = slower, calmer scroll through hero */
+      lerp: 0.075,
+      wheelMultiplier: 0.78,
+    });
+
+    ScrollTrigger.scrollerProxy(document.documentElement, {
+      scrollTop(value) {
+        if (arguments.length && typeof value === "number") {
+          instance.scrollTo(value, { immediate: true });
+        }
+        return instance.scroll;
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        };
+      },
     });
 
     setLenis(instance);
@@ -48,9 +65,26 @@ export function SmoothScrollProvider({ children }: Props) {
     ScrollTrigger.refresh();
 
     return () => {
+      ScrollTrigger.scrollerProxy(document.documentElement, {
+        scrollTop(value) {
+          if (arguments.length && typeof value === "number") {
+            window.scrollTo(0, value);
+          }
+          return window.scrollY || document.documentElement.scrollTop;
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+        },
+      });
       offScroll();
       gsap.ticker.remove(onTick);
       instance.destroy();
+      ScrollTrigger.refresh();
       setLenis(null);
     };
   }, []);
