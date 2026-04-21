@@ -52,37 +52,71 @@ export function SkillsHallOfFame() {
     if (!root) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const headerEls = root.querySelectorAll(".skills-hall-header > *");
+    const header = root.querySelector(".skills-hall-header");
+    const lineA = root.querySelector(".skills-hall-line-a");
+    const lineB = root.querySelector(".skills-hall-line-b");
+    const intro = root.querySelector(".skills-hall-intro");
+    const grid = root.querySelector(".skills-hall-grid");
     const cards = root.querySelectorAll(".skills-hall-card");
 
     const ctx = gsap.context(() => {
-      gsap.from(headerEls, {
-        y: 48,
-        opacity: 0,
-        duration: 0.9,
-        ease: "power3.out",
-        stagger: 0.1,
-        scrollTrigger: {
-          trigger: root.querySelector(".skills-hall-header"),
-          start: "top 82%",
-          toggleActions: "play none none none",
-          once: true,
-        },
-      });
+      if (header && lineA && lineB && intro) {
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: header,
+              start: "top 78%",
+              toggleActions: "play none none none",
+              once: true,
+            },
+          })
+          .from(lineA, {
+            y: 48,
+            opacity: 0,
+            filter: "blur(10px)",
+            duration: 0.85,
+            ease: "power3.out",
+          })
+          .from(
+            lineB,
+            {
+              y: 56,
+              opacity: 0,
+              filter: "blur(8px)",
+              duration: 0.9,
+              ease: "power3.out",
+            },
+            "-=0.62",
+          )
+          .from(
+            intro,
+            {
+              y: 36,
+              opacity: 0,
+              duration: 0.75,
+              ease: "power2.out",
+            },
+            "-=0.55",
+          );
+      }
 
-      gsap.from(cards, {
-        y: 52,
-        opacity: 0,
-        duration: 0.55,
-        ease: "power2.out",
-        stagger: { each: 0.035, from: "start" },
-        scrollTrigger: {
-          trigger: root.querySelector(".skills-hall-grid"),
-          start: "top 90%",
-          toggleActions: "play none none none",
-          once: true,
-        },
-      });
+      if (grid && cards.length) {
+        gsap.from(cards, {
+          y: 80,
+          opacity: 0,
+          scale: 0.88,
+          rotateZ: (i) => ((i % 3) - 1) * 1.25,
+          duration: 0.78,
+          ease: "back.out(1.12)",
+          stagger: { each: 0.034, from: "center" },
+          scrollTrigger: {
+            trigger: grid,
+            start: "top 86%",
+            toggleActions: "play none none none",
+            once: true,
+          },
+        });
+      }
     }, root);
 
     requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -240,6 +274,7 @@ export function SkillsHallOfFame() {
 
         .skills-hall-card {
           margin-top: var(--stagger, 0);
+          transform-origin: 50% 50%;
         }
 
         @media (max-width: 520px) {
@@ -254,6 +289,10 @@ export function SkillsHallOfFame() {
           border: 1px solid var(--skills-line);
           background: #050505;
           overflow: hidden;
+          transition:
+            transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1),
+            border-color 0.45s ease,
+            box-shadow 0.45s ease;
           clip-path: polygon(
             0 0,
             100% 0,
@@ -261,6 +300,16 @@ export function SkillsHallOfFame() {
             calc(100% - 108px) 100%,
             0 100%
           );
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+          .skills-hall-card:hover .skills-hall-card-frame {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(217, 255, 0, 0.35);
+            box-shadow:
+              0 18px 40px rgba(0, 0, 0, 0.55),
+              0 0 0 1px rgba(217, 255, 0, 0.1);
+          }
         }
 
         .skills-hall-card-visual {

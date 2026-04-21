@@ -163,9 +163,18 @@ function App() {
           Elboukri
         </span>
         <div className="landing-header-actions">
-          <a className="landing-store" href="#contact">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-            Store
+          <a
+            className="landing-store"
+            href="/images/hamzaelboukri_cv.pdf"
+            download="hamzaelboukri_cv.pdf"
+            aria-label="Download resume PDF"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Resume
           </a>
           <button type="button" className="landing-menu" aria-label="Menu">
             <span />

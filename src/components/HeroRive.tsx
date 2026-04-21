@@ -13,8 +13,12 @@ type HeroRiveProps = {
   variant?: "full" | "portrait";
 };
 
+/**
+ * Resolves a local `/…` path only after verifying the file exists.
+ * Mounting Rive before this check used to load 404 HTML as “.riv” → “Bad header” / corrupt file.
+ */
 function useResolvedRiveSrc(preferred: string) {
-  const [resolved, setResolved] = useState(preferred);
+  const [resolved, setResolved] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,15 +53,17 @@ export function HeroRive({ src = RIVE_ASSETS.helmets, className, variant = "full
 
   return (
     <div className={["hero-rive-layer", className].filter(Boolean).join(" ")} aria-hidden>
-      <Rive
-        key={resolved}
-        src={resolved}
-        layout={new Layout({
-          fit,
-          alignment: Alignment.Center,
-        })}
-        shouldResizeCanvasToContainer
-      />
+      {resolved ? (
+        <Rive
+          key={resolved}
+          src={resolved}
+          layout={new Layout({
+            fit,
+            alignment: Alignment.Center,
+          })}
+          shouldResizeCanvasToContainer
+        />
+      ) : null}
     </div>
   );
 }
