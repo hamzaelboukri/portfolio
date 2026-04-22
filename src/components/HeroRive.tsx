@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Rive, { Layout, Fit, Alignment } from "@rive-app/react-canvas";
-import { RIVE_ASSETS, RIVE_CDN_FALLBACK } from "../riveAssets";
+import { RIVE_ASSETS, RIVE_CDN_FALLBACK, isLikelyRivFile } from "../riveAssets";
 
 type HeroRiveProps = {
   /** Default: helmets (`reef.riv`) */
@@ -14,30 +14,55 @@ type HeroRiveProps = {
 };
 
 /**
- * Resolves a local `/…` path only after verifying the file exists.
- * Mounting Rive before this check used to load 404 HTML as “.riv” → “Bad header” / corrupt file.
+ * Resolves a local `/…` path after verifying bytes are a real Rive file.
+ * A bare HEAD check was unsafe: Vite (or a host) can return 200 + HTML for unknown paths,
+ * which Rive then parses and surfaces as rive.wasm “Bad header”.
  */
 function useResolvedRiveSrc(preferred: string) {
   const [resolved, setResolved] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let objectUrl: string | null = null;
 
     if (!preferred.startsWith("/")) {
       setResolved(preferred);
       return;
     }
 
-    fetch(preferred, { method: "HEAD" })
-      .then((r) => {
-        if (!cancelled) setResolved(r.ok ? preferred : RIVE_CDN_FALLBACK);
-      })
-      .catch(() => {
+    (async () => {
+      try {
+        const r = await fetch(preferred);
+        if (!r.ok) {
+          if (!cancelled) setResolved(RIVE_CDN_FALLBACK);
+          return;
+        }
+        const ct = (r.headers.get("content-type") || "").toLowerCase();
+        if (ct.includes("text/html") || ct.includes("application/xhtml")) {
+          if (!cancelled) setResolved(RIVE_CDN_FALLBACK);
+          return;
+        }
+        const buf = await r.arrayBuffer();
+        if (!isLikelyRivFile(buf)) {
+          if (!cancelled) setResolved(RIVE_CDN_FALLBACK);
+          return;
+        }
+        if (cancelled) return;
+        const blob = new Blob([buf], { type: "application/octet-stream" });
+        objectUrl = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        setResolved(objectUrl);
+      } catch {
         if (!cancelled) setResolved(RIVE_CDN_FALLBACK);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [preferred]);
 

@@ -213,6 +213,22 @@ function HeroPlane({
   } | null>(null);
 
   useEffect(() => {
+    const makePlaceholder = () => {
+      const c = document.createElement("canvas");
+      c.width = 1;
+      c.height = 1;
+      const g = c.getContext("2d");
+      if (g) {
+        g.fillStyle = "#e8e8e0";
+        g.fillRect(0, 0, 1, 1);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    };
+
     const loader = new THREE.TextureLoader();
     let disposed = false;
     let base: THREE.Texture | null = null;
@@ -230,7 +246,7 @@ function HeroPlane({
       });
     };
 
-    loader.load(baseUrl, (tex) => {
+    const onLoad = (which: "base" | "overlay", tex: THREE.Texture) => {
       if (disposed) {
         tex.dispose();
         return;
@@ -238,21 +254,29 @@ function HeroPlane({
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
-      base = tex;
+      if (which === "base") base = tex;
+      else overlay = tex;
       tryFinish();
-    });
+    };
 
-    loader.load(overlayUrl, (tex) => {
-      if (disposed) {
-        tex.dispose();
-        return;
-      }
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      overlay = tex;
-      tryFinish();
-    });
+    const onError = (which: "base" | "overlay") => {
+      if (disposed) return;
+      const ph = makePlaceholder();
+      onLoad(which, ph);
+    };
+
+    loader.load(
+      baseUrl,
+      (tex) => onLoad("base", tex),
+      undefined,
+      () => onError("base"),
+    );
+    loader.load(
+      overlayUrl,
+      (tex) => onLoad("overlay", tex),
+      undefined,
+      () => onError("overlay"),
+    );
 
     return () => {
       disposed = true;

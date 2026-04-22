@@ -3,14 +3,13 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FooterScrollReveal } from "./components/FooterScrollReveal";
 import { HelmetHero, type HeroCanvasHoverSettings } from "./components/HelmetHero";
-import { HeroRive } from "./components/HeroRive";
 import { HeroScrollShrink } from "./components/HeroScrollShrink";
 import { CanvasToBlackRamp } from "./components/CanvasToBlackRamp";
 import { SkillsHallOfFame } from "./components/SkillsHallOfFame";
 import { TopoBackground } from "./components/TopoBackground";
-import { RIVE_ASSETS } from "./riveAssets";
-
 gsap.registerPlugin(ScrollTrigger);
+
+/* Hero image stack: `HelmetHero` only (base PNG + `hero-3-Photoroom.png` on hover). If you add `<HeroRive>`, you must `import { HeroRive } from "./components/HeroRive"` and `RIVE_ASSETS` — or leave Rive out to avoid the red CDN layer. */
 
 const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
 const HERO_HOVER = "/images/hero-3-Photoroom.png";
@@ -86,6 +85,12 @@ function App() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  /** If WebGL textures never report ready (load error, throttled run), do not block the app forever. */
+  useEffect(() => {
+    const t = window.setTimeout(() => setHeroReady(true), 12_000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -222,9 +227,6 @@ function App() {
                 hover={HERO_HOVER_REVEAL}
                 onReady={() => setHeroReady(true)}
               />
-
-              {/* Rive aligned on portrait zone (same focal area as hero-3 hover reveal) */}
-              <HeroRive className="hero-rive-layer--portrait" variant="portrait" src={RIVE_ASSETS.helmets} />
             </div>
 
             <div className="landing-hero-fx-card" aria-hidden />
@@ -346,9 +348,6 @@ function App() {
           --ink-soft: rgba(10, 10, 10, 0.45);
           --lime: #d4ff00;
           --line: rgba(10, 10, 10, 0.08);
-          /* Rive “liquid” helmet: lower = more portrait / hero-3 visible */
-          /* Lower so hero-3 PNG reveal stays the readable focal layer */
-          --hero-rive-opacity: 0.22;
           /* Topo: dark ink at first paint (white hero); HeroScrollShrink tweens to light on green */
           --topo-stroke: rgba(0, 0, 0, 0.12);
           --topo-stroke-mid: rgba(0, 0, 0, 0.082);
@@ -958,54 +957,13 @@ function App() {
           will-change: opacity;
         }
 
-        /* ── WebGL hero (z:1) + Rive canvas overlay (z:2), name (z:3) ── */
+        /* ── WebGL hero (z:1), name (z:3) — no Rive overlay (avoids red/teal CDN tint) ── */
         .hero-canvas-wrap {
           position: absolute;
           inset: 0;
           z-index: 1;
           perspective: 1200px;
           pointer-events: none;
-        }
-
-        .hero-rive-layer {
-          position: absolute;
-          inset: 0;
-          z-index: 2;
-          pointer-events: none;
-          opacity: 0.38;
-          mix-blend-mode: soft-light;
-        }
-
-        /* Centered “liquid” helmet read — soft edge + blend like Lando ref */
-        .hero-rive-layer--portrait {
-          inset: auto;
-          width: min(40vw, 420px);
-          max-height: min(51vh, 465px);
-          aspect-ratio: 1;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -54%);
-          opacity: var(--hero-rive-opacity);
-          mix-blend-mode: soft-light;
-          filter: saturate(1.08) contrast(1.04);
-          -webkit-mask-image: radial-gradient(
-            ellipse 76% 80% at 50% 45%,
-            #000 46%,
-            rgba(0, 0, 0, 0.65) 58%,
-            transparent 76%
-          );
-          mask-image: radial-gradient(
-            ellipse 76% 80% at 50% 45%,
-            #000 46%,
-            rgba(0, 0, 0, 0.65) 58%,
-            transparent 76%
-          );
-        }
-
-        .hero-rive-layer canvas {
-          display: block;
-          width: 100% !important;
-          height: 100% !important;
         }
 
         .hero-canvas-perspective {

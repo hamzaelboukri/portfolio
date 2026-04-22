@@ -23,4 +23,17 @@ export const RIVE_ASSETS = {
 
 export type RiveAssetKey = keyof typeof RIVE_ASSETS;
 
+/** Known-good sample used when a local `/…riv` is missing or is HTML (Vite SPA) / 404. */
 export const RIVE_CDN_FALLBACK = "https://cdn.rive.app/animations/vehicles.riv";
+
+/** Rive binary fingerprint — see https://rive.app/docs/runtimes/advanced-topic/format */
+const RIVE_MAGIC = new Uint8Array([0x52, 0x49, 0x56, 0x45]); // "RIVE"
+
+export function isLikelyRivFile(buf: ArrayBuffer): boolean {
+  if (buf.byteLength < 4) return false;
+  const u8 = new Uint8Array(buf, 0, 4);
+  for (let i = 0; i < 4; i++) {
+    if (u8[i] !== RIVE_MAGIC[i]) return false;
+  }
+  return true;
+}
