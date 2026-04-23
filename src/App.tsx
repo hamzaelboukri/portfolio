@@ -1,16 +1,24 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { RacingFooter } from "./components/RacingFooter";
 import type { HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroScrollShrink } from "./components/HeroScrollShrink";
-import { SkillsHallOfFame } from "./components/SkillsHallOfFame";
-import { ProjectsSection } from "./components/ProjectsSection";
-import { ExperienceSection } from "./components/ExperienceSection";
 import { TopoBackground } from "./components/TopoBackground";
 
 const HelmetHero = lazy(() =>
   import("./components/HelmetHero").then((m) => ({ default: m.HelmetHero })),
+);
+const SkillsHallOfFame = lazy(() =>
+  import("./components/SkillsHallOfFame").then((m) => ({ default: m.SkillsHallOfFame })),
+);
+const ProjectsSection = lazy(() =>
+  import("./components/ProjectsSection").then((m) => ({ default: m.ProjectsSection })),
+);
+const ExperienceSection = lazy(() =>
+  import("./components/ExperienceSection").then((m) => ({ default: m.ExperienceSection })),
+);
+const RacingFooter = lazy(() =>
+  import("./components/RacingFooter").then((m) => ({ default: m.RacingFooter })),
 );
 gsap.registerPlugin(ScrollTrigger);
 
@@ -232,7 +240,8 @@ function App() {
   return (
     <div className={`landing${isLoading ? "" : " is-ready"}`} ref={landingRef}>
       {isLoading && (
-        <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading portfolio">
+        <div className="boot-loader" role="status" aria-live="polite">
+          <span className="sr-only">Loading portfolio</span>
           <div className="boot-loader-glow" aria-hidden />
           <div className="boot-loader-strip" aria-hidden />
           <div className="boot-loader-grid" aria-hidden />
@@ -400,13 +409,17 @@ function App() {
           </section>
         </div>
 
-        <SkillsHallOfFame />
-        <ProjectsSection />
-        <ExperienceSection />
+        <Suspense fallback={null}>
+          <SkillsHallOfFame />
+          <ProjectsSection />
+          <ExperienceSection />
+        </Suspense>
       </main>
 
       {/* Site footer: contact (email, LinkedIn, GitHub) + copyright — #contact for deep links */}
-      <RacingFooter isBooting={false} />
+      <Suspense fallback={null}>
+        <RacingFooter isBooting={false} />
+      </Suspense>
 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

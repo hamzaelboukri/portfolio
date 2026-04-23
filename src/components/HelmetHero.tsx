@@ -450,8 +450,9 @@ export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: 
   return (
     <div
       className="hero-canvas-wrap"
+      role="group"
       style={{ "--rx": "0deg", "--ry": "0deg" } as React.CSSProperties}
-      aria-label={portraitAlt ?? undefined}
+      aria-label={portraitAlt ?? "Interactive portrait — move the pointer to reveal"}
     >
       <div className="hero-canvas-perspective">
         <Canvas
@@ -462,7 +463,7 @@ export function HelmetHero({ baseUrl, revealUrl, portraitAlt, onReady, hover }: 
             powerPreference: "high-performance",
             outputColorSpace: THREE.SRGBColorSpace,
           }}
-          dpr={[1, 1.85]}
+          dpr={[1, 1.5]}
           onCreated={({ gl }) => {
             gl.setClearColor(0x000000, 0);
             gl.outputColorSpace = THREE.SRGBColorSpace;

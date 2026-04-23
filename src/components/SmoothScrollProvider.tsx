@@ -27,44 +27,63 @@ export function SmoothScrollProvider({ children }: Props) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) return;
 
-    const instance = new Lenis({
-      smoothWheel: true,
-      anchors: true,
-      /* Softer glide + less delta per wheel tick = slower, calmer scroll through hero */
-      lerp: 0.075,
-      wheelMultiplier: 0.78,
-    });
+    let instance: Lenis | null = null;
+    let offScroll: (() => void) | undefined;
+    let onTick: ((time: number) => void) | undefined;
+    let cancelled = false;
 
-    ScrollTrigger.scrollerProxy(document.documentElement, {
-      scrollTop(value) {
-        if (arguments.length && typeof value === "number") {
-          instance.scrollTo(value, { immediate: true });
-        }
-        return instance.scroll;
-      },
-      getBoundingClientRect() {
-        return {
-          top: 0,
-          left: 0,
-          width: window.innerWidth,
-          height: window.innerHeight,
-        };
-      },
-    });
+    const start = () => {
+      if (cancelled) return;
 
-    setLenis(instance);
+      instance = new Lenis({
+        smoothWheel: true,
+        anchors: true,
+        /* Softer glide + less delta per wheel tick = slower, calmer scroll through hero */
+        lerp: 0.075,
+        wheelMultiplier: 0.78,
+      });
 
-    const offScroll = instance.on("scroll", ScrollTrigger.update);
+      ScrollTrigger.scrollerProxy(document.documentElement, {
+        scrollTop(value) {
+          if (arguments.length && typeof value === "number") {
+            instance!.scrollTo(value, { immediate: true });
+          }
+          return instance!.scroll;
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+        },
+      });
 
-    const onTick = (time: number) => {
-      instance.raf(time * 1000);
+      setLenis(instance);
+
+      offScroll = instance.on("scroll", ScrollTrigger.update);
+
+      onTick = (time: number) => {
+        instance!.raf(time * 1000);
+      };
+      gsap.ticker.add(onTick);
+      gsap.ticker.lagSmoothing(0);
+
+      ScrollTrigger.refresh();
     };
-    gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(0);
 
-    ScrollTrigger.refresh();
+    /* Defer until after first paint so LCP / main thread are less contended on load */
+    let innerRaf = 0;
+    const outerRaf = window.requestAnimationFrame(() => {
+      innerRaf = window.requestAnimationFrame(start);
+    });
 
     return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(outerRaf);
+      window.cancelAnimationFrame(innerRaf);
+      if (!instance) return;
       ScrollTrigger.scrollerProxy(document.documentElement, {
         scrollTop(value) {
           if (arguments.length && typeof value === "number") {
@@ -81,8 +100,8 @@ export function SmoothScrollProvider({ children }: Props) {
           };
         },
       });
-      offScroll();
-      gsap.ticker.remove(onTick);
+      offScroll?.();
+      if (onTick) gsap.ticker.remove(onTick);
       instance.destroy();
       ScrollTrigger.refresh();
       setLenis(null);
