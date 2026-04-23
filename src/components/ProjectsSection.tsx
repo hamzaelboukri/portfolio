@@ -38,7 +38,7 @@ const PROJECTS: Project[] = [
     num: "02",
     name: "Track-Go",
     tagline:
-      "Real-time delivery tracker — live package status, route history & driver dashboard. ⭐ 2",
+      "Live delivery tracker — package status, route history, and a simple driver view.",
     tags: ["React", "TypeScript", "Maps API", "Socket.io"],
     lang: "TypeScript",
     year: "2026",
@@ -116,9 +116,9 @@ const PROJECTS: Project[] = [
   },
   {
     num: "10",
-    name: "Gestion des Offres",
+    name: "Offer Manager",
     tagline:
-      "Job-offer management portal — post, filter & apply to offers with role-based access for HR teams.",
+      "HR job portal — publish roles, filter applicants, and apply with role-based workspaces.",
     tags: ["PHP", "Laravel", "MySQL", "Blade"],
     lang: "PHP",
     year: "2025",
@@ -396,7 +396,7 @@ export function ProjectsSection() {
 
           {/* HUD text bottom left */}
           <g fill="rgba(210,255,0,0.2)" fontFamily="monospace" fontSize="7" letterSpacing="2">
-            <text x="40" y="970">SELECTED WORKS</text>
+            <text x="40" y="970">SHIPPED WORK</text>
             <text x="40" y="982" opacity="0.6">HAMZA ELBOUKRI · 2026</text>
           </g>
         </svg>
@@ -420,23 +420,23 @@ export function ProjectsSection() {
         </svg>
 
         {/* Ghost watermark */}
-        <span className="pw-bg-wm">WORK</span>
+        <span className="pw-bg-wm">SHIP</span>
       </div>
 
       {/* ── Section heading ───────────────────────────────── */}
       <div className="pw-head" ref={headRef}>
         <div className="pw-head-title">
-          <span className="pw-head-line pw-head-line--plain">SELECTED</span>
-          <span className="pw-head-line pw-head-line--serif">WORKS.</span>
+          <span className="pw-head-line pw-head-line--plain">SHIPPED</span>
+          <span className="pw-head-line pw-head-line--serif">WORK.</span>
         </div>
         <div className="pw-head-meta">
           <span className="pw-head-count">
             <span className="pw-head-count-num">{PROJECTS.length.toString().padStart(2, "0")}</span>
-            <span className="pw-head-count-label"> Projects</span>
+            <span className="pw-head-count-label"> builds</span>
           </span>
           <p className="pw-head-copy">
-            Full-stack applications, REST APIs and interactive front-ends —
-            built across YouCode coursework and personal experiments.
+            Apps, APIs, and interfaces — coursework at YouCode plus side projects
+            I iterate on in public.
           </p>
         </div>
       </div>

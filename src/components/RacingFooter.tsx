@@ -40,7 +40,7 @@ const links: {
   external?: boolean;
   icon: () => ReactNode;
 }[] = [
-  { id: "mail", label: "E-mail", sub: EMAIL, href: `mailto:${EMAIL}`, icon: IconMail },
+  { id: "mail", label: "Email", sub: EMAIL, href: `mailto:${EMAIL}`, icon: IconMail },
   {
     id: "in",
     label: "LinkedIn",
@@ -78,12 +78,12 @@ export function RacingFooter({ isBooting }: Props) {
 
       <div className="rf-inner">
         <div className="rf-hero">
-          <p className="rf-eyebrow">Pit wall</p>
+          <p className="rf-eyebrow">Contact</p>
           <p className="rf-title" aria-hidden>
-            <span className="rf-title-a">Pole</span>
-            <span className="rf-title-b">position</span>
+            <span className="rf-title-a">Open</span>
+            <span className="rf-title-b">channel</span>
           </p>
-          <p className="rf-lede">Réponse rapide par mail ou message — on aligne un créneau.</p>
+          <p className="rf-lede">Fast replies by email or DM — happy to find a time to talk.</p>
         </div>
 
         <ul className="rf-grid" role="list">
@@ -120,7 +120,7 @@ export function RacingFooter({ isBooting }: Props) {
           <p className="rf-copy">
             &copy; {new Date().getFullYear()} Hamza Elboukri
             <span className="rf-copy-dot" />
-            <span className="rf-tag">Full-stack · YouCode</span>
+            <span className="rf-tag">Full-stack developer · YouCode</span>
           </p>
         </div>
       </div>

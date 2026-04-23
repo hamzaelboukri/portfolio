@@ -241,12 +241,12 @@ function App() {
     <div className={`landing${isLoading ? "" : " is-ready"}`} ref={landingRef}>
       {isLoading && (
         <div className="boot-loader" role="status" aria-live="polite">
-          <span className="sr-only">Loading portfolio</span>
+          <span className="sr-only">Opening site</span>
           <div className="boot-loader-glow" aria-hidden />
           <div className="boot-loader-strip" aria-hidden />
           <div className="boot-loader-grid" aria-hidden />
           <div className="boot-loader-stage">
-            <p className="boot-loader-kicker">TypeScript · React · Web</p>
+            <p className="boot-loader-kicker">React · Node · Type-safe APIs</p>
             <h2 className="boot-loader-title">
               <span className="boot-loader-title-line boot-loader-title-line--lime">Hamza</span>
               <span className="boot-loader-title-line boot-loader-title-line--ghost">Elboukri</span>
@@ -269,14 +269,14 @@ function App() {
             className="landing-store"
             href="/images/hamzaelboukri_cv.pdf"
             download="hamzaelboukri_cv.pdf"
-            aria-label="Download resume PDF"
+            aria-label="Download CV as PDF"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Resume
+            CV
           </a>
         </div>
       </header>
@@ -285,10 +285,10 @@ function App() {
         <section className={`landing-first-screen${isLoading ? " is-booting" : ""}`} ref={heroSectionRef}>
           <div className="landing-first-screen-headline" aria-hidden>
             <p className="landing-first-screen-line landing-first-screen-line--lime" ref={heroLineARef}>
-              WE DID IT AT HOME WE DID IT AT HOME
+              SHIP THE DETAILS SHIP THE DETAILS SHIP THE DETAILS
             </p>
             <p className="landing-first-screen-line landing-first-screen-line--white" ref={heroLineBRef}>
-              FOREVER A BRITISH GP WEEKEND I WILL REMEMBER
+              FROM FIRST COMMIT TO PRODUCTION I OWN THE OUTCOME
             </p>
           </div>
 
@@ -298,17 +298,25 @@ function App() {
             <div className="landing-spotlight landing-spotlight--hero-stack" aria-hidden />
             <section className="landing-hero">
           <aside className="landing-side-card landing-side-card-left">
-            <span className="side-card-label">Next Project</span>
+            <span className="side-card-label">Now shipping</span>
             <div className="side-card-divider" />
             <div className="side-card-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="22" y1="8.5" x2="2" y2="15.5"/><line x1="2" y1="8.5" x2="22" y2="15.5"/></svg>
             </div>
-            <span className="side-card-value">Web App</span>
+            <span className="side-card-value">
+              Full
+              <br />
+              stack
+            </span>
             <div className="side-card-divider" />
             <div className="side-card-badge">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <span className="side-card-note">Creative Dev<br/>Since 2024</span>
+            <span className="side-card-note">
+              Building since
+              <br />
+              2024
+            </span>
           </aside>
 
           <div className="landing-hero-inner">
@@ -345,14 +353,14 @@ function App() {
           </div>
 
           <aside className="landing-side-card landing-side-card-right">
-            <span className="side-card-label">Interact</span>
+            <span className="side-card-label">Try it</span>
             <div className="side-card-divider" />
             <div className="side-card-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             </div>
-            <span className="side-card-value">Hover</span>
+            <span className="side-card-value">Reveal</span>
             <div className="side-card-divider" />
-            <span className="side-card-note">Move cursor<br/>to reveal</span>
+            <span className="side-card-note">Hover the<br />portrait</span>
           </aside>
             </section>
           </HeroScrollShrink>
@@ -365,7 +373,7 @@ function App() {
             aria-labelledby="dev-manifesto-heading"
             ref={manifestoPanelRef}
           >
-            <h2 id="dev-manifesto-heading" className="sr-only">Developer philosophy</h2>
+            <h2 id="dev-manifesto-heading" className="sr-only">How I build software</h2>
             <div className="dev-manifesto-inner">
               <div className="dev-manifesto-badge">
                 <svg
@@ -388,22 +396,22 @@ function App() {
                     <path d="M83 38h34M100 28v22" />
                   </g>
                 </svg>
-                <p className="dev-manifesto-tagline">TYPESCRIPT · OPEN WEB · SINCE 2024</p>
+                <p className="dev-manifesto-tagline">TYPE-SAFE · OPEN WEB · SINCE 2024</p>
               </div>
               <p className="dev-manifesto-text">
                 <span className="dev-manifesto-line">
-                  <span className="dev-manifesto-highlight">PUSHING</span> QUALITY,
+                  SPEAK IN <span className="dev-manifesto-highlight">TYPES</span> AND CONTRACTS,
+                </span>
+                <span className="dev-manifesto-line">NOT IN VIBES OR MEMOS.</span>
+                <span className="dev-manifesto-line">WHEN PROD SCREAMS, YOU ALREADY</span>
+                <span className="dev-manifesto-line">
+                  KNEW THE <span className="dev-manifesto-highlight">SHAPE</span> OF THE BREAK.
                 </span>
                 <span className="dev-manifesto-line">
-                  SHIPPING FOR <span className="dev-manifesto-highlight">USERS</span>,
+                  <span className="dev-manifesto-highlight">TYPESCRIPT</span> IS THE BACKBONE.
                 </span>
-                <span className="dev-manifesto-line">BRINGING IT ALL IN</span>
-                <span className="dev-manifesto-line">EVERY REPO. DEFINING A</span>
-                <span className="dev-manifesto-line">
-                  <span className="dev-manifesto-highlight">CRAFT</span> IN TYPESCRIPT
-                </span>
-                <span className="dev-manifesto-line">ON THE WEB AND</span>
-                <span className="dev-manifesto-line">IN PRODUCTION.</span>
+                <span className="dev-manifesto-line">THE UI IS THE PROOF.</span>
+                <span className="dev-manifesto-line">THE METRICS ARE THE VERDICT.</span>
               </p>
             </div>
           </section>

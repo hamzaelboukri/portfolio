@@ -32,8 +32,8 @@ const SKILL_LOGO_BY_NAME: Record<string, string> = {
   "CI/CD": SI("githubactions"),
   AWS: DV("amazonwebservices", "amazonwebservices-original-wordmark.svg"),
   Figma: DV("figma", "figma-original.svg"),
-  "UML Â· ERD": SI("mermaid"),
-  "Agile Â· Scrum": DV("trello", "trello-plain.svg"),
+  "UML · ERD": SI("mermaid"),
+  "Agile · Scrum": DV("trello", "trello-plain.svg"),
   Git: DV("git", "git-original.svg"),
   Postman: DV("postman", "postman-original.svg"),
   Jira: DV("jira", "jira-original.svg"),
@@ -78,8 +78,8 @@ const SKILLS: { name: string; tag: string; learnedPct: number }[] = [
   { name: "CI/CD", tag: "DevOps", learnedPct: 80 },
   { name: "AWS", tag: "Cloud", learnedPct: 78 },
   { name: "Figma", tag: "Design", learnedPct: 81 },
-  { name: "UML Â· ERD", tag: "Modeling", learnedPct: 88 },
-  { name: "Agile Â· Scrum", tag: "Methods", learnedPct: 90 },
+  { name: "UML · ERD", tag: "Modeling", learnedPct: 88 },
+  { name: "Agile · Scrum", tag: "Methods", learnedPct: 90 },
   { name: "Git", tag: "Tools", learnedPct: 91 },
   { name: "Postman", tag: "Tools", learnedPct: 89 },
   { name: "Jira", tag: "Tools", learnedPct: 86 },
@@ -92,8 +92,8 @@ function isStaggeredFourColTrack(index: number) {
 }
 
 const INTRO_LINES = [
-  "From YouCode and real projects â€” TypeScript, React, Node.js, and cloud.",
-  "Full-stack expertise across front-end, back-end, DevOps, databases and tooling.",
+  "YouCode training plus real repos — TypeScript, React, Node, and cloud primitives.",
+  "Front-end polish, back-end APIs, DevOps basics, databases, and the glue between them.",
 ];
 
 function HelmetFrameSvgs({ active }: { active: boolean }) {
@@ -268,8 +268,8 @@ export function SkillsHallOfFame() {
           {/* Top-left HUD readout bracket */}
           <g stroke="rgba(210,255,0,0.22)" strokeWidth="0.9" fill="none">
             <path d="M40 40 L40 16 L64 16" />
-            <text x="70" y="22" fill="rgba(210,255,0,0.35)" fontSize="7" fontFamily="monospace" letterSpacing="2">SKILLS Â· SYS</text>
-            <text x="70" y="34" fill="rgba(210,255,0,0.2)"  fontSize="6" fontFamily="monospace" letterSpacing="2">HAMZA Â· 2026</text>
+            <text x="70" y="22" fill="rgba(210,255,0,0.35)" fontSize="7" fontFamily="monospace" letterSpacing="2">CORE · STACK</text>
+            <text x="70" y="34" fill="rgba(210,255,0,0.2)"  fontSize="6" fontFamily="monospace" letterSpacing="2">HAMZA · 2026</text>
             <path d="M40 80 L40 54 L64 54" />
             <text x="70" y="60" fill="rgba(210,255,0,0.2)"  fontSize="6" fontFamily="monospace">24 MODULES</text>
           </g>
@@ -277,7 +277,7 @@ export function SkillsHallOfFame() {
           {/* Bottom-right HUD readout bracket */}
           <g stroke="rgba(210,255,0,0.18)" strokeWidth="0.9" fill="none" transform="translate(1400,900) rotate(180)">
             <path d="M40 40 L40 16 L64 16" />
-            <text x="70" y="22" fill="rgba(210,255,0,0.25)" fontSize="7" fontFamily="monospace" letterSpacing="2" transform="scale(-1,1) translate(-1330,0)">STATUS Â· OK</text>
+            <text x="70" y="22" fill="rgba(210,255,0,0.25)" fontSize="7" fontFamily="monospace" letterSpacing="2" transform="scale(-1,1) translate(-1330,0)">READY · OK</text>
           </g>
         </svg>
 
@@ -319,19 +319,19 @@ export function SkillsHallOfFame() {
         <header className="skills-hall-header title-layout">
           <div className="skills-hall-title-headline title-headline-w">
             <h2 id="skills-hall-heading" className="sr-only">
-              Skills
+              Core stack
               <br />
-              Hall of fame
+              and depth
             </h2>
             <h2 className="skills-hall-title-mona text-title-lg" aria-hidden="true">
               <span className="skills-hall-line">
-                <span className="skills-hall-line-txt">Skills</span>
+                <span className="skills-hall-line-txt">Core stack</span>
                 <span className="skills-high-line-reveal" />
               </span>
             </h2>
             <h2 className="skills-hall-title-brier text-title-lg-brier c-lime-off" aria-hidden="true">
               <span className="skills-hall-line">
-                <span className="skills-hall-line-txt">Hall of fame</span>
+                <span className="skills-hall-line-txt">and depth</span>
                 <span className="skills-high-line-reveal" />
               </span>
             </h2>

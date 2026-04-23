@@ -7,53 +7,53 @@ gsap.registerPlugin(ScrollTrigger);
 const experiences = [
   {
     id: "freelance",
-    date: "Mai 2024 — Août 2024",
-    role: "Designer UX/UI",
+    date: "May 2024 — Aug 2024",
+    role: "UX/UI Designer",
     type: "Freelance",
-    org: "Mission client",
-    location: "À distance",
-    project: "E-Learning",
-    projectTitle: "Plateforme d’e-learning",
+    org: "Client engagement",
+    location: "Remote",
+    project: "E-learning",
+    projectTitle: "E-learning platform",
     tech: ["Figma"],
     highlights: [
-      "Conception UX/UI complète : landing performante et quatre tableaux de bord responsive.",
-      "Espaces administrateur, responsable, formateur et participant — parcours et ressources dédiés.",
-      "Landing orientée conversion : tunnel d’inscription clair et expérience fluide.",
+      "End-to-end UX/UI: conversion-focused landing and four responsive dashboards.",
+      "Dedicated spaces for admin, manager, trainer, and learner — tailored flows and assets.",
+      "Clear signup funnel and smooth onboarding on the marketing site.",
     ],
   },
   {
     id: "ehc",
     date: "Mar 2025 — Sep 2025",
-    role: "Développeur full-stack",
-    type: "Stage",
+    role: "Full-stack Developer",
+    type: "Internship",
     org: "Experts Human Capital",
-    location: "Casablanca · Bureau principal à Meknès",
-    project: "Recrute",
-    projectTitle: "Plateforme de recrutement interne",
+    location: "Casablanca · HQ in Meknes",
+    project: "Recruit",
+    projectTitle: "Internal hiring platform",
     tech: ["Java", "Spring Boot", "React", "Figma", "MySQL", "Git"],
     highlights: [
-      "Développement d’une plateforme web pour digitaliser et suivre le processus de recrutement de bout en bout.",
-      "UI Figma puis tableau de bord interactif (React & Bootstrap) pour remplacer le suivi manuel et afficher des KPI en temps réel.",
-      "Formulaires de candidature, filtres avancés et gestion complète du parcours candidat.",
-      "Parcours UX/UI : landing page + trois espaces — candidat, recruteur et administrateur.",
+      "Web app to digitize and track recruitment from intake to hire.",
+      "Figma-first UI, then an interactive dashboard (React & Bootstrap) replacing spreadsheets with live KPIs.",
+      "Application forms, advanced filters, and full candidate lifecycle management.",
+      "UX/UI across landing plus three roles — candidate, recruiter, and administrator.",
     ],
   },
 ];
 
 const education = {
   years: "2025 — 2026",
-  status: "En cours",
-  title: "Développeur full-stack — 2ᵉ année",
+  status: "In progress",
+  title: "Full-stack developer — year 2",
   stack: "MERN",
   school: "YouCode",
-  uni: "Université Mohammed VI Polytechnique",
+  uni: "Mohammed VI Polytechnic University",
   place: "Youssoufia",
 };
 
 const languages = [
-  { name: "Arabe", level: "Maternelle" },
-  { name: "Anglais", level: "Intermédiaire" },
-  { name: "Français", level: "Intermédiaire" },
+  { name: "Arabic", level: "Native" },
+  { name: "English", level: "Intermediate" },
+  { name: "French", level: "Intermediate" },
 ];
 
 export function ExperienceSection() {
@@ -178,15 +178,15 @@ export function ExperienceSection() {
       <div className="exp-inner">
         <header className="exp-head" ref={headRef}>
           <h2 id="exp-heading" className="exp-heading">
-            <span className="exp-head-chunk">Expérience</span>
+            <span className="exp-head-chunk">Experience</span>
             <span className="exp-head-chunk exp-head-chunk--lime">&</span>
-            <span className="exp-head-chunk">formation</span>
+            <span className="exp-head-chunk">education</span>
           </h2>
           <div className="exp-head-sub">
-            <p>Parcours pro, études YouCode & langues — le fil conducteur côté terrain.</p>
+            <p>Internships, freelance work, YouCode studies, and languages — the practical thread.</p>
             <div className="exp-head-pill" aria-hidden>
               <span className="exp-pill-dot" />
-              Maroc · 2024 — 2026
+              Morocco · 2024 — 2026
             </div>
           </div>
         </header>
@@ -208,7 +208,7 @@ export function ExperienceSection() {
               </div>
               <div className="exp-node-body">
                 <div className="exp-proj">
-                  <span className="exp-proj-k">Projet</span>
+                  <span className="exp-proj-k">Project</span>
                   <span className="exp-proj-n">{e.project}</span>
                   <span className="exp-proj-t">{e.projectTitle}</span>
                 </div>
@@ -231,7 +231,7 @@ export function ExperienceSection() {
 
         <div className="exp-bottom">
           <div className="exp-edu" ref={eduRef}>
-            <h3 className="exp-subh">Éducation</h3>
+            <h3 className="exp-subh">Education</h3>
             <div className="exp-edu-card">
               <div className="exp-edu-top">
                 <span className="exp-edu-years">{education.years}</span>
@@ -249,7 +249,7 @@ export function ExperienceSection() {
           </div>
 
           <div className="exp-langs">
-            <h3 className="exp-subh">Langues</h3>
+            <h3 className="exp-subh">Languages</h3>
             <ul className="exp-lang-chips" ref={langRef}>
               {languages.map((l) => (
                 <li key={l.name} className="exp-lang">
