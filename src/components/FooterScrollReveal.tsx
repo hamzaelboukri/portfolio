@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type HTMLAttributes } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLenisInstance } from "./SmoothScrollProvider";
@@ -7,9 +7,9 @@ type Props = {
   id?: string;
   className?: string;
   children: ReactNode;
-};
+} & HTMLAttributes<HTMLElement>;
 
-export function FooterScrollReveal({ id, className, children }: Props) {
+export function FooterScrollReveal({ id, className, children, ...rest }: Props) {
   const ref = useRef<HTMLElement>(null);
   const lenis = useLenisInstance();
 
@@ -41,7 +41,7 @@ export function FooterScrollReveal({ id, className, children }: Props) {
   }, [lenis]);
 
   return (
-    <footer ref={ref} id={id} className={className}>
+    <footer ref={ref} id={id} className={className} {...rest}>
       {children}
     </footer>
   );

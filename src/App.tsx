@@ -1,11 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FooterScrollReveal } from "./components/FooterScrollReveal";
+import { RacingFooter } from "./components/RacingFooter";
 import type { HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroScrollShrink } from "./components/HeroScrollShrink";
 import { SkillsHallOfFame } from "./components/SkillsHallOfFame";
 import { ProjectsSection } from "./components/ProjectsSection";
+import { ExperienceSection } from "./components/ExperienceSection";
 import { TopoBackground } from "./components/TopoBackground";
 
 const HelmetHero = lazy(() =>
@@ -38,6 +39,7 @@ function App() {
   const heroLineBRef = useRef<HTMLParagraphElement>(null);
   const heroSignatureRef = useRef<SVGSVGElement>(null);
   const heroVisualRef = useRef<HTMLDivElement>(null);
+  const manifestoPanelRef = useRef<HTMLElement>(null);
   const [bootReady, setBootReady] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const isLoading = useMemo(() => !(bootReady && heroReady), [bootReady, heroReady]);
@@ -156,12 +158,94 @@ function App() {
     return () => ctx.revert();
   }, []);
 
+  useLayoutEffect(() => {
+    const panel = manifestoPanelRef.current;
+    if (!panel) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const lines = panel.querySelectorAll<HTMLElement>(".dev-manifesto-line");
+    const tagline = panel.querySelector<HTMLElement>(".dev-manifesto-tagline");
+    const emblem = panel.querySelector(".dev-manifesto-emblem");
+    if (!lines.length) return;
+
+    const ctx = gsap.context(() => {
+      const targets: Element[] = Array.from(lines);
+      if (tagline) targets.push(tagline);
+      if (emblem) targets.push(emblem);
+      gsap.set(targets, { willChange: "transform, opacity, clip-path, filter" });
+
+      if (emblem instanceof SVGElement) {
+        gsap.set(emblem, { opacity: 0, scale: 0.9, y: 18 });
+      }
+      if (tagline) {
+        gsap.set(tagline, { opacity: 0, clipPath: "inset(0 100% 0 0)" });
+      }
+      gsap.set(lines, {
+        opacity: 0,
+        clipPath: "inset(0 100% 0 0)",
+        y: 22,
+        filter: "blur(8px)",
+      });
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        scrollTrigger: {
+          trigger: panel,
+          start: "top 72%",
+          toggleActions: "play none none none",
+          once: true,
+        },
+        onComplete: () => {
+          gsap.set(targets, { clearProps: "willChange" });
+        },
+      });
+
+      if (emblem instanceof SVGElement) {
+        tl.to(emblem, { opacity: 1, scale: 1, y: 0, duration: 0.55 });
+      }
+      if (tagline) {
+        tl.to(
+          tagline,
+          { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.52, ease: "power2.out" },
+          emblem instanceof SVGElement ? "-=0.28" : 0,
+        );
+      }
+      tl.to(
+        lines,
+        {
+          opacity: 1,
+          clipPath: "inset(0 0% 0 0)",
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.68,
+          stagger: 0.1,
+        },
+        tagline ? "-=0.22" : emblem instanceof SVGElement ? "-=0.15" : 0,
+      );
+    }, panel);
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div className={`landing${isLoading ? "" : " is-ready"}`} ref={landingRef}>
       {isLoading && (
-        <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading website">
-          <div className="boot-loader-ring" />
-          <span className="boot-loader-text">Loading experience...</span>
+        <div className="boot-loader" role="status" aria-live="polite" aria-label="Loading portfolio">
+          <div className="boot-loader-glow" aria-hidden />
+          <div className="boot-loader-strip" aria-hidden />
+          <div className="boot-loader-grid" aria-hidden />
+          <div className="boot-loader-stage">
+            <p className="boot-loader-kicker">TypeScript · React · Web</p>
+            <h2 className="boot-loader-title">
+              <span className="boot-loader-title-line boot-loader-title-line--lime">Hamza</span>
+              <span className="boot-loader-title-line boot-loader-title-line--ghost">Elboukri</span>
+            </h2>
+            <div className="boot-loader-track" aria-hidden>
+              <div className="boot-loader-track-fill" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -219,7 +303,7 @@ function App() {
             <div className="side-card-badge">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <span className="side-card-note">Creative Dev<br/>Since 2023</span>
+            <span className="side-card-note">Creative Dev<br/>Since 2024</span>
           </aside>
 
           <div className="landing-hero-inner">
@@ -274,6 +358,7 @@ function App() {
             className="landing-sticky-panel landing-sticky-panel--dev-manifesto"
             id="philosophy"
             aria-labelledby="dev-manifesto-heading"
+            ref={manifestoPanelRef}
           >
             <h2 id="dev-manifesto-heading" className="sr-only">Developer philosophy</h2>
             <div className="dev-manifesto-inner">
@@ -298,7 +383,7 @@ function App() {
                     <path d="M83 38h34M100 28v22" />
                   </g>
                 </svg>
-                <p className="dev-manifesto-tagline">TYPESCRIPT · OPEN WEB · SINCE 2023</p>
+                <p className="dev-manifesto-tagline">TYPESCRIPT · OPEN WEB · SINCE 2024</p>
               </div>
               <p className="dev-manifesto-text">
                 <span className="dev-manifesto-line">
@@ -321,12 +406,11 @@ function App() {
 
         <SkillsHallOfFame />
         <ProjectsSection />
+        <ExperienceSection />
       </main>
 
-      <FooterScrollReveal id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
-        <p>&copy; {new Date().getFullYear()} Hamza Elboukri</p>
-        <a href="mailto:hello@example.com">hello@example.com</a>
-      </FooterScrollReveal>
+      {/* Site footer: contact (email, LinkedIn, GitHub) + copyright — #contact for deep links */}
+      <RacingFooter isBooting={false} />
 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -402,34 +486,176 @@ function App() {
           inset: 0;
           z-index: 20;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 0.9rem;
-          background: var(--paper);
-          color: var(--ink);
+          padding: 1.5rem;
+          overflow: hidden;
+          color: #f5f3eb;
+          background:
+            radial-gradient(
+              ellipse 85% 65% at var(--mx, 50vw) var(--my, 45vh),
+              rgba(212, 255, 0, 0.14) 0%,
+              rgba(212, 255, 0, 0.04) 38%,
+              transparent 62%
+            ),
+            radial-gradient(ellipse 100% 80% at 50% 100%, rgba(30, 35, 24, 0.9), transparent 55%),
+            #0a0b08;
+          animation: boot-vignette-in 0.6s ease-out both;
         }
-
-        .boot-loader-ring {
-          width: 42px;
-          height: 42px;
-          border: 3px solid rgba(10, 10, 10, 0.14);
-          border-top-color: rgba(10, 10, 10, 0.8);
-          border-radius: 999px;
-          animation: loader-spin 0.85s linear infinite;
+        .boot-loader-glow {
+          position: absolute;
+          inset: -20%;
+          pointer-events: none;
+          background: radial-gradient(
+            circle clamp(180px, 35vmin, 420px) at var(--mx, 50vw) var(--my, 50vh),
+            rgba(212, 255, 0, 0.09) 0%,
+            transparent 68%
+          );
+          opacity: 0.85;
         }
-
-        .boot-loader-text {
-          font-size: 0.72rem;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: rgba(10, 10, 10, 0.65);
+        .boot-loader-strip {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          transform-origin: 0 50%;
+          animation: boot-strip-in 0.75s cubic-bezier(0.22, 0.7, 0.28, 1) both;
+          background: linear-gradient(
+            90deg,
+            #e10600 0%,
+            #e10600 12%,
+            #f5f3eb 12%,
+            #f5f3eb 22%,
+            #0a0a0a 22%,
+            #0a0a0a 38%,
+            #d4ff00 38%,
+            #d4ff00 52%,
+            #0a0a0a 52%,
+            #0a0a0a 100%
+          );
+        }
+        .boot-loader-grid {
+          position: absolute;
+          inset: 0;
+          opacity: 0.07;
+          pointer-events: none;
+          background-image:
+            linear-gradient(rgba(212, 255, 0, 0.35) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(212, 255, 0, 0.22) 1px, transparent 1px);
+          background-size: 64px 64px;
+          mask-image: radial-gradient(ellipse 75% 60% at 50% 45%, black 0%, transparent 75%);
+        }
+        .boot-loader-stage {
+          position: relative;
+          z-index: 1;
+          text-align: center;
+          max-width: 92vw;
+        }
+        .boot-loader-kicker {
+          margin: 0 0 0.65rem;
+          font-size: 0.62rem;
           font-weight: 600;
+          letter-spacing: 0.38em;
+          text-transform: uppercase;
+          color: rgba(212, 255, 0, 0.75);
+          animation: boot-fade-rise 0.65s cubic-bezier(0.22, 0.7, 0.28, 1) 0.12s both;
+        }
+        .boot-loader-title {
+          margin: 0;
+          padding: 0;
+          font-family: "Bebas Neue", Impact, sans-serif;
+          font-weight: 400;
+          line-height: 0.88;
+          text-transform: uppercase;
+        }
+        .boot-loader-title-line {
+          display: block;
+          animation: boot-fade-rise 0.75s cubic-bezier(0.22, 0.7, 0.28, 1) both;
+        }
+        .boot-loader-title-line--lime {
+          font-size: clamp(3.2rem, 15vw, 7.8rem);
+          letter-spacing: 0.04em;
+          background: linear-gradient(168deg, #f0ff6a 0%, #d4ff00 42%, #8fb800 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 36px rgba(212, 255, 0, 0.28));
+          animation-delay: 0.2s;
+        }
+        .boot-loader-title-line--ghost {
+          font-size: clamp(2.4rem, 11vw, 5.6rem);
+          letter-spacing: 0.08em;
+          color: rgba(245, 243, 235, 0.22);
+          animation-delay: 0.32s;
+        }
+        .boot-loader-track {
+          width: min(220px, 70vw);
+          height: 2px;
+          margin: 1.75rem auto 0;
+          border-radius: 2px;
+          background: rgba(255, 255, 255, 0.06);
+          overflow: hidden;
+          animation: boot-fade-rise 0.55s ease-out 0.45s both;
+        }
+        .boot-loader-track-fill {
+          height: 100%;
+          width: min(42%, 120px);
+          border-radius: 2px;
+          background: linear-gradient(90deg, transparent, #9fb800, #d4ff00, #eeff8a, #d4ff00, #9fb800, transparent);
+          background-size: 200% 100%;
+          animation: boot-track-shimmer 1.15s ease-in-out infinite;
+        }
+        @keyframes boot-vignette-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes boot-strip-in {
+          from { transform: scaleX(0); }
+          to { transform: scaleX(1); }
+        }
+        @keyframes boot-fade-rise {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 18px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes boot-track-shimmer {
+          0% { transform: translateX(-100%); background-position: 0% 0; }
+          100% { transform: translateX(320%); background-position: 100% 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .boot-loader,
+          .boot-loader-strip,
+          .boot-loader-kicker,
+          .boot-loader-title-line,
+          .boot-loader-track {
+            animation: none;
+          }
+          .boot-loader { opacity: 1; }
+          .boot-loader-strip { transform: scaleX(1); }
+          .boot-loader-kicker,
+          .boot-loader-title-line,
+          .boot-loader-track {
+            opacity: 1;
+            transform: none;
+          }
+          .boot-loader-track-fill {
+            animation: none;
+            transform: none;
+            width: 100%;
+            opacity: 0.5;
+          }
         }
 
         .landing-header,
         .landing-main,
-        .landing-footer {
+        .landing-footer.rf-landing {
           transition: opacity 0.45s ease;
         }
 
@@ -680,10 +906,6 @@ function App() {
           50%  { transform: translate3d(0.9%, 0.9%, 0) scale(1.015); }
           100% { transform: translate3d(1.3%, -0.7%, 0) scale(1.01); }
         }
-        @keyframes loader-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
         @keyframes intro-zoom {
           0%   { transform: scale(1.08); filter: saturate(0.9) contrast(0.95); }
           100% { transform: scale(1); filter: saturate(1) contrast(1); }
@@ -740,7 +962,7 @@ function App() {
         /* ── Header ── */
         .landing-header,
         .landing-main,
-        .landing-footer {
+        .landing-footer.rf-landing {
           position: relative;
           z-index: 1;
         }
@@ -1189,6 +1411,7 @@ function App() {
 
         .dev-manifesto-line {
           display: block;
+          backface-visibility: hidden;
         }
 
         .dev-manifesto-highlight {
@@ -1208,22 +1431,7 @@ function App() {
           white-space: nowrap;
         }
 
-        /* ── Footer ── */
-        .landing-footer {
-          position: relative;
-          z-index: 1;
-          padding: 2rem clamp(1rem, 4vw, 2.5rem);
-          border-top: 1px solid var(--line);
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-          justify-content: space-between;
-          font-size: 0.85rem;
-          color: var(--ink-soft);
-          background: var(--paper);
-        }
-
-        .landing-footer a { color: var(--ink); }
+        /* Footer: see RacingFooter component */
 
         /* ── Responsive ── */
         @media (max-width: 900px) {
