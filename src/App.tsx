@@ -1,18 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FooterScrollReveal } from "./components/FooterScrollReveal";
-import { HelmetHero, type HeroCanvasHoverSettings } from "./components/HelmetHero";
+import type { HeroCanvasHoverSettings } from "./components/HelmetHero";
 import { HeroScrollShrink } from "./components/HeroScrollShrink";
-import { CanvasToBlackRamp } from "./components/CanvasToBlackRamp";
 import { SkillsHallOfFame } from "./components/SkillsHallOfFame";
+import { ProjectsSection } from "./components/ProjectsSection";
 import { TopoBackground } from "./components/TopoBackground";
+
+const HelmetHero = lazy(() =>
+  import("./components/HelmetHero").then((m) => ({ default: m.HelmetHero })),
+);
 gsap.registerPlugin(ScrollTrigger);
 
 /* Hero image stack: `HelmetHero` only (base PNG + `hero-3-Photoroom.png` on hover). If you add `<HeroRive>`, you must `import { HeroRive } from "./components/HeroRive"` and `RIVE_ASSETS` — or leave Rive out to avoid the red CDN layer. */
 
-const HERO_BASE = "/images/hamzaelboukri-Photoroom.png";
-const HERO_HOVER = "/images/hero-3-Photoroom.png";
+const HERO_BASE = "/images/hamzaelboukri-Photoroom.webp";
+const HERO_HOVER = "/images/hero-3-Photoroom.webp";
 
 /** Larger spotlight + stronger blend so hero-3-Photoroom fills more of the portrait on hover */
 const HERO_HOVER_REVEAL: HeroCanvasHoverSettings = {
@@ -58,7 +62,7 @@ function App() {
 
   useEffect(() => {
     let mounted = true;
-    const minDelay = new Promise((resolve) => setTimeout(resolve, 700));
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 200));
 
     const preloadImage = (src: string) =>
       new Promise<void>((resolve) => {
@@ -87,9 +91,9 @@ function App() {
     };
   }, []);
 
-  /** If WebGL textures never report ready (load error, throttled run), do not block the app forever. */
+  /** If WebGL textures never report ready (load error, throttled run), cap the wait. */
   useEffect(() => {
-    const t = window.setTimeout(() => setHeroReady(true), 12_000);
+    const t = window.setTimeout(() => setHeroReady(true), 3_000);
     return () => clearTimeout(t);
   }, []);
 
@@ -220,13 +224,15 @@ function App() {
 
           <div className="landing-hero-inner">
             <div className="landing-hero-visual" ref={heroVisualRef}>
-              <HelmetHero
-                baseUrl={HERO_BASE}
-                revealUrl={HERO_HOVER}
-                portraitAlt="Hamza Elboukri"
-                hover={HERO_HOVER_REVEAL}
-                onReady={() => setHeroReady(true)}
-              />
+              <Suspense fallback={null}>
+                <HelmetHero
+                  baseUrl={HERO_BASE}
+                  revealUrl={HERO_HOVER}
+                  portraitAlt="Hamza Elboukri"
+                  hover={HERO_HOVER_REVEAL}
+                  onReady={() => setHeroReady(true)}
+                />
+              </Suspense>
             </div>
 
             <div className="landing-hero-fx-card" aria-hidden />
@@ -313,8 +319,8 @@ function App() {
           </section>
         </div>
 
-        <CanvasToBlackRamp />
         <SkillsHallOfFame />
+        <ProjectsSection />
       </main>
 
       <FooterScrollReveal id="contact" className={`landing-footer${isLoading ? " is-booting" : ""}`}>
@@ -323,8 +329,6 @@ function App() {
       </FooterScrollReveal>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         html, body, #root {
@@ -1111,7 +1115,7 @@ function App() {
           justify-content: center;
           padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2.5rem);
           background: var(--canvas);
-          z-index: 2;
+          z-index: 1;
           overflow: hidden;
         }
 

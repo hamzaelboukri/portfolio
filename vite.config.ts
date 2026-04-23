@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { compression } from "vite-plugin-compression2";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,5 +40,28 @@ function faviconIcoFromSvg(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), faviconIcoFromSvg()],
+  plugins: [
+    react(),
+    faviconIcoFromSvg(),
+    compression({ algorithm: "gzip", exclude: [/\.(png|webp|jpg|jpeg|gif|svg|ico)$/] }),
+    compression({ algorithm: "brotliCompress", exclude: [/\.(png|webp|jpg|jpeg|gif|svg|ico)$/] }),
+  ],
+  build: {
+    target: "es2020",
+    minify: "esbuild",
+    cssMinify: true,
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-three": ["three", "@react-three/fiber"],
+          "vendor-gsap": ["gsap"],
+          "vendor-lenis": ["lenis"],
+        },
+      },
+    },
+    assetsInlineLimit: 4096,
+  },
 });
