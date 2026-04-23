@@ -269,10 +269,6 @@ function App() {
             </svg>
             Resume
           </a>
-          <button type="button" className="landing-menu" aria-label="Menu">
-            <span />
-            <span />
-          </button>
         </div>
       </header>
 
@@ -476,8 +472,7 @@ function App() {
         .landing a[href],
         .landing button,
         .landing [role='button'],
-        .landing .landing-store,
-        .landing .landing-menu {
+        .landing .landing-store {
           cursor: pointer;
         }
 
@@ -1015,31 +1010,6 @@ function App() {
         .landing-store:hover {
           filter: brightness(0.92);
           text-decoration: none;
-        }
-
-        .landing-menu {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          border: 1px solid rgba(10, 10, 10, 0.1);
-          background: #fff;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          transition: background 0.2s;
-        }
-
-        .landing-menu:hover { background: #fafaf8; }
-
-        .landing-menu span {
-          display: block;
-          width: 18px;
-          height: 2px;
-          background: var(--ink);
-          border-radius: 1px;
         }
 
         /* ── First screen: topo + spotlight + header + hero scale together on scroll ── */
